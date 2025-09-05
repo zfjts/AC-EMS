@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>点巡检标准管理 - 自控设备全生命周期管理平台</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="/static/font-awesome.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#165DFF',
+                        secondary: '#4080FF',
+                        accent: '#69b1ff',
+                        neon: '#36CFFB',
+                        dark: '#F2F3F5',
+                        textPrimary: '#1D2129',
+                        textSecondary: '#4E5969',
+                        textTertiary: '#86909C',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .bg-gradient-tech {
+                background: linear-gradient(135deg, #E8F3FF 0%, #F0F7FF 100%);
+            }
+            .text-shadow-neon {
+                text-shadow: 0 0 8px rgba(54, 207, 251, 0.5);
+            }
+            .border-glow {
+                box-shadow: 0 0 5px rgba(54, 207, 251, 0.7);
+            }
+            .card-hover {
+                transition: all 300ms ease;
+                will-change: transform;
+            }
+            .card-hover:hover {
+                box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.03), 0 0 10px rgba(54, 207, 251, 0.2);
+                transform: translateY(-1px);
+            }
+        }
+    </style>
+</head>
+<body class="bg-dark text-black min-h-screen font-sans flex flex-col">
+    <header class="bg-gradient-to-r from-blue-600 to-blue-800 py-6 shadow-md">
+        <div class="container mx-auto px-4 py-6">
+            <h1 class="text-[clamp(1.8rem,5vw,3rem)] font-bold text-center text-white text-shadow-neon">
+                自控设备全生命周期管理平台
+            </h1>
+        </div>
+    </header>
+
+    {% include 'navbar.html' %}
+
+    <script>
+        // 移动端菜单切换
+        document.addEventListener('DOMContentLoaded', function() {
+            const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+            const mobileMenu = document.getElementById('mobile-menu');
+
+            if (mobileMenuBtn && mobileMenu) {
+                mobileMenuBtn.addEventListener('click', function() {
+                    mobileMenu.classList.toggle('hidden');
+                });
+            }
+        });
+    </script>
+
+    <main class="flex-grow container mx-auto px-4 py-8">
+        <div class="max-w-6xl mx-auto">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
+                <h2 class="text-2xl font-semibold mb-4 md:mb-0 text-black">点巡检标准管理</h2>
+                <a href="/inspection/standards/create/" class="bg-primary hover:bg-primary/90 text-white font-medium py-2 px-6 rounded-md transition duration-300 flex items-center justify-center self-start">
+                    <i class="fa fa-plus mr-2"></i>创建新标准
+                </a>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100 card-hover mb-8">
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-700">
+                        <thead>
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">标准名称</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">设备类型</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">巡检周期</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">创建日期</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">状态</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-800">
+                            {% for standard in standards %}
+                            <tr class="hover:bg-gray-50 transition duration-300">
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-black">{{ standard.name }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{{ standard.equipment_type }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{{ standard.cycle }} {{ standard.cycle_unit }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{{ standard.created_at.strftime('%Y-%m-%d') }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                    {% if standard.is_active %}
+                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">启用</span>
+                                    {% else %}
+                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">禁用</span>
+                                    {% endif %}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                                    <a href="/inspection/standards/{{ standard.id }}/detail/" class="text-primary hover:text-primary/80 mr-3" title="查看详情"><i class="fa fa-eye"></i></a>
+                                    <a href="/inspection/standards/{{ standard.id }}/edit/" class="text-secondary hover:text-secondary/80 mr-3" title="编辑标准"><i class="fa fa-edit"></i></a>
+                                    <button onclick="if(confirm('确定要删除此标准吗？')) { document.getElementById('delete-form-{{ standard.id }}').submit(); }" class="text-red-500 hover:text-red-700" title="删除标准"><i class="fa fa-trash"></i></button>
+                                    <form id="delete-form-{{ standard.id }}" action="/inspection/standards/delete/{{ standard.id }}" method="post" class="hidden">
+                                        <!-- 表单内容为空，只是用于提交POST请求 -->
+                                    </form>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="6" class="px-6 py-4 text-center text-sm text-gray-500">暂无点巡检标准数据</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="bg-white border-t border-gray-200 py-8 mt-12">
+        <div class="container mx-auto px-4 text-center">
+            <p class="text-gray-500">自控设备全生命周期管理平台 &copy; 2025</p>
+        </div>
+    </footer>
+</body>
+</html>

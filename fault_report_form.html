@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ '编辑' if report else '创建' }}故障报告 - 自控设备全生命周期管理平台</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="/static/font-awesome.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#165DFF',
+                        secondary: '#4080FF',
+                        accent: '#165DFF',
+                        neon: '#4080FF',
+                        dark: '#F2F3F5',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .bg-gradient-tech {
+                background: linear-gradient(135deg, #F2F3F5 0%, #E5E6EB 100%);
+            }
+            .text-shadow-neon {
+                text-shadow: 0 0 8px rgba(64, 128, 255, 0.5);
+            }
+            .border-glow {
+                box-shadow: 0 0 5px rgba(64, 128, 255, 0.7);
+            }
+            .card-hover {
+                transition: all 300ms ease;
+                will-change: transform;
+            }
+            .card-hover:hover {
+                box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05), 0 0 10px rgba(64, 128, 255, 0.2);
+                transform: translateY(-1px);
+            }
+        }
+    </style>
+</head>
+<body class="bg-dark text-gray-800 min-h-screen font-sans flex flex-col">
+    <header class="bg-primary text-white border-b border-neon/30 shadow-lg">
+        <div class="container mx-auto px-4 py-6">
+            <h1 class="text-[clamp(1.8rem,5vw,3rem)] font-bold text-center text-white text-shadow-neon">
+                自控设备全生命周期管理平台
+            </h1>
+        </div>
+    </header>
+
+    <nav class="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-10">
+        <div class="container mx-auto px-4">
+            <div class="flex justify-between items-center py-4">
+                <div class="flex items-center space-x-2 md:hidden">
+                    <button id="mobile-menu-btn" class="text-gray-600 hover:text-primary focus:outline-none" title="显示移动端菜单">
+                        <i class="fa fa-bars text-xl"></i>
+                    </button>
+                </div>
+                <ul id="main-nav" class="hidden md:flex space-x-8 py-2">
+                    <li><a href="/" class="font-medium text-gray-600 hover:text-primary px-1 py-2 transition-all duration-300 hover:border-b-2 hover:border-primary/50">首页</a></li>
+                    <li><a href="/equipment/" class="font-medium text-gray-600 hover:text-primary px-1 py-2 transition-all duration-300 hover:border-b-2 hover:border-primary/50">设备管理</a></li>
+                    <li><a href="/documents/" class="font-medium text-gray-600 hover:text-primary px-1 py-2 transition-all duration-300 hover:border-b-2 hover:border-primary/50">文档管理</a></li>
+                    <li><a href="/maintenance/reminders/" class="font-medium text-gray-600 hover:text-primary px-1 py-2 transition-all duration-300 hover:border-b-2 hover:border-primary/50">维护提醒</a></li>
+                    <li><a href="/maintenance/" class="font-medium text-primary border-b-2 border-primary px-1 py-2 transition-all duration-300">检维修管理</a></li>
+                    <li><a href="/monitoring/" class="font-medium text-gray-600 hover:text-primary px-1 py-2 transition-all duration-300 hover:border-b-2 hover:border-primary/50">生命周期分析</a></li>
+                </ul>
+            </div>
+        </div>
+        <!-- 移动端菜单 -->
+        <div id="mobile-menu" class="hidden md:hidden bg-white border-t border-gray-200 absolute w-full shadow-md">
+            <ul class="flex flex-col space-y-4 p-4">
+                <li><a href="/" class="font-medium text-gray-600 hover:text-primary block py-2 transition-all duration-300">首页</a></li>
+                <li><a href="/equipment/" class="font-medium text-gray-600 hover:text-primary block py-2 transition-all duration-300">设备管理</a></li>
+                <li><a href="/documents/" class="font-medium text-gray-600 hover:text-primary block py-2 transition-all duration-300">文档管理</a></li>
+                <li><a href="/maintenance/reminders/" class="font-medium text-gray-600 hover:text-primary block py-2 transition-all duration-300">维护提醒</a></li>
+                <li><a href="/maintenance/" class="font-medium text-primary block py-2 transition-all duration-300">检维修管理</a></li>
+                <li><a href="/monitoring/" class="font-medium text-gray-600 hover:text-primary block py-2 transition-all duration-300">生命周期分析</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <script>
+        // 移动端菜单切换
+        document.getElementById('mobile-menu-btn').addEventListener('click', function() {
+            const mobileMenu = document.getElementById('mobile-menu');
+            mobileMenu.classList.toggle('hidden');
+        });
+    </script>
+
+    <main class="flex-grow container mx-auto px-4 py-8">
+        <div class="max-w-4xl mx-auto bg-white rounded-xl shadow-lg p-6 border border-gray-200 card-hover">
+            <h2 class="text-2xl font-semibold mb-6 text-center text-gray-800">{{ '编辑' if report else '创建' }}故障报告</h2>
+            <form action="{{ '/fault-reports/' ~ report.id ~ '/edit/' if report else '/fault-reports/create/' }}" method="post" enctype="multipart/form-data" class="space-y-6">
+                {% if report %}
+                <input type="hidden" name="id" value="{{ report.id }}">
+                {% endif %}
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="md:col-span-2">
+                        <label for="equipment_id" class="block text-gray-600 font-medium mb-2">设备 <span class="text-red-500">*</span></label>
+                        <select id="equipment_id" name="equipment_id" required
+                            class="bg-gray-50 border border-gray-300 rounded-md w-full px-4 py-2 text-gray-800 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary">
+                            <option value="">请选择设备</option>
+                            {% for equipment in equipments %}
+                            <option value="{{ equipment.id }}" {% if report and report.equipment_id == equipment.id %}selected{% endif %}>{{ equipment.name }} ({{ equipment.model }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-4">
+                        <label for="fault_type" class="block text-gray-700 text-sm font-bold mb-2">故障类型</label>
+                        <select id="fault_type" name="fault_type" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                            <option value="硬件故障">硬件故障</option>
+                            <option value="软件故障">软件故障</option>
+                            <option value="连接故障">连接故障</option>
+                            <option value="配置故障">配置故障</option>
+                            <option value="其他故障">其他故障</option>
+                        </select>
+                    </div>
+                    <div class="mb-4">
+                        <label for="status" class="block text-gray-700 text-sm font-bold mb-2">故障状态</label>
+                        <select id="status" name="status" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                            <option value="pending">待处理</option>
+                            <option value="resolved">已解决</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="report_date" class="block text-gray-600 font-medium mb-2">报告日期 <span class="text-red-500">*</span></label>
+                        <input type="date" id="report_date" name="report_date" required value="{{ report.report_date.strftime('%Y-%m-%d') if report else (datetime.now().strftime('%Y-%m-%d')) }}"
+                            class="bg-gray-50 border border-gray-300 rounded-md w-full px-4 py-2 text-gray-800 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary">
+                    </div>
+                    <div class="md:col-span-2">
+                        <label for="description" class="block text-gray-600 font-medium mb-2">故障描述 <span class="text-red-500">*</span></label>
+                        <textarea id="description" name="description" rows="4" required
+                            class="bg-gray-50 border border-gray-300 rounded-md w-full px-4 py-2 text-gray-800 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary">{{ report.description if report else '' }}</textarea>
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="block text-gray-600 font-medium mb-2">故障图片 (可选)</label>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                            <div class="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-primary transition duration-300">
+                                <input type="file" name="images[]" accept="image/*" multiple
+                                    class="hidden" id="file-upload-1">
+                                <label for="file-upload-1" class="cursor-pointer">
+                                    <i class="fa fa-plus text-4xl text-gray-400 mb-2"></i>
+                                    <span class="text-sm text-gray-500">点击上传图片</span>
+                                </label>
+                            </div>
+                            {% if report and report.images %}
+                                {% for image in report.images %}
+                                <div class="relative group">
+                                    <img src="{{ image.url }}" alt="故障图片" class="w-full h-32 object-cover rounded-lg border border-gray-700">
+                                    <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                        <button type="button" class="text-white p-2" onclick="removeImage(this, '{{ image.id }}')" title="删除图片"></button>
+                                            <i class="fa fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            {% endif %}
+                        </div>
+                        <p class="text-xs text-gray-500 mt-2">支持上传多个图片，格式为JPG、PNG或WEBP</p>
+                    </div>
+                </div>
+                <div class="flex justify-center space-x-4 mt-8">
+                    <button type="submit" class="bg-primary hover:bg-primary/90 text-white font-medium py-2 px-6 rounded-md transition duration-300 flex items-center justify-center"><i class="fa fa-save mr-2"></i>{{ '保存修改' if report else '提交报告' }}</button>
+                    <a href="/fault-reports/" class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium py-2 px-6 rounded-md transition duration-300">
+                        取消
+                    </a>
+                </div>
+            </form>
+        </div>
+    </main>
+
+    <footer class="bg-white border-t border-gray-200 py-8 mt-12">
+        <div class="container mx-auto px-4 text-center">
+            <p class="text-gray-600">自控设备全生命周期管理平台 &copy; 2025</p>
+        </div>
+    </footer>
+
+    <script>
+        function removeImage(button, imageId) {
+            if (confirm('确定要删除这张图片吗？')) {
+                // 这里可以添加AJAX请求来删除图片
+                button.closest('.relative').remove();
+            }
+        }
+    </script>
+</body>
+</html>

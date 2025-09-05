@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}自控设备全生命周期管理平台{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/static/font-awesome.min.css">
+    <script>{% raw %}
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#165DFF',
+                        secondary: '#4080FF',
+                        accent: '#69b1ff',
+                        neon: '#36CFFB',
+                        dark: '#F2F3F5',
+                        textPrimary: '#1D2129',
+                        textSecondary: '#4E5969',
+                        textTertiary: '#86909C',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    {% endraw %}</script>
+    <style type="text/tailwindcss">{% raw %}
+        @layer utilities {
+            .bg-gradient-tech {
+                background: linear-gradient(135deg, #E8F3FF 0%, #F0F7FF 100%);
+            }
+            .text-shadow-neon {
+                text-shadow: 0 0 8px rgba(54, 207, 251, 0.5);
+            }
+            .border-glow {
+                box-shadow: 0 0 5px rgba(54, 207, 251, 0.7);
+            }
+            .card-hover {
+                transition: all 300ms ease;
+                will-change: transform;
+            },
+            .card-hover:hover {
+                box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.03), 0 0 10px rgba(54, 207, 251, 0.2);
+                transform: translateY(-1px);
+            }
+        }
+    {% endraw %}</style>
+</head>
+<body class="bg-dark text-black min-h-screen font-sans flex flex-col">
+    <header class="bg-gradient-to-r from-blue-600 to-blue-800 py-6 shadow-md">
+        <div class="container mx-auto px-4">
+            <h1 class="text-3xl font-bold text-center text-white">
+                自控设备全生命周期管理平台
+            </h1>
+        </div>
+    </header>
+
+    {% include 'navbar.html' %}
+
+    <main class="flex-grow container mx-auto px-4 py-8">
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="bg-gray-800 text-white py-4 mt-8">
+        <div class="container mx-auto px-4 text-center">
+            <p>© 2025 自控设备全生命周期管理平台 - 所有权利保留</p>
+        </div>
+    </footer>
+
+    <!-- 移动端菜单切换JS -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+            const mobileMenu = document.getElementById('mobile-menu');
+
+            if (mobileMenuBtn && mobileMenu) {
+                mobileMenuBtn.addEventListener('click', function() {
+                    mobileMenu.classList.toggle('hidden');
+                });
+            }
+        });
+    </script>
+</body>
+</html>

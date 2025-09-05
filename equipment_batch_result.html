@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>批量上传结果</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css">
+    <link rel="stylesheet" href="/static/font-awesome.min.css">
+    <style>
+        .neon {
+            box-shadow: 0 0 5px #00f, 0 0 10px #00f, 0 0 15px #00f;
+        }
+        .bg-primary {
+            background-color: #1e293b;
+        }
+        .bg-secondary {
+            background-color: #0f766e;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <header class="bg-primary text-white shadow-md">
+        <div class="container mx-auto px-4 py-6">
+            <h1 class="text-3xl font-bold flex items-center">
+                <i class="fas fa-tools mr-3 text-blue-600"></i>批量上传结果
+            </h1>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-4 py-8">
+        <div class="bg-white rounded-lg shadow-md p-6 max-w-4xl mx-auto">
+            <div class="mb-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-xl font-semibold text-gray-800">上传结果摘要</h2>
+                    <div class="flex space-x-4">
+                        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                            <i class="fas fa-check-circle mr-1"></i>成功: {{ success_count }}
+                        </span>
+                        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800">
+                            <i class="fas fa-times-circle mr-1"></i>失败: {{ error_count }}
+                        </span>
+                    </div>
+                </div>
+
+                {% if success_count > 0 %}
+                <div class="p-4 bg-green-50 border border-green-100 rounded-md mb-4">
+                    <p class="text-green-700 flex items-center">
+                        <i class="fas fa-check-circle mr-2"></i>已成功上传 {{ success_count }} 条设备记录。
+                    </p>
+                </div>
+                {% endif %}
+
+                {% if error_count > 0 %}
+                <div class="p-4 bg-red-50 border border-red-100 rounded-md mb-6">
+                    <p class="text-red-700 flex items-center mb-2">
+                        <i class="fas fa-exclamation-circle mr-2"></i>有 {{ error_count }} 条记录上传失败。
+                    </p>
+                    <button id="toggleErrors" class="text-blue-600 hover:text-blue-800 text-sm font-medium flex items-center">
+                        <i class="fas fa-chevron-down mr-1"></i>查看错误详情
+                    </button>
+                    <div id="errorDetails" class="hidden mt-4 overflow-x-auto">
+                        <table class="min-w-full divide-y divide-red-200">
+                            <thead class="bg-red-50">
+                                <tr>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-red-800 uppercase tracking-wider">行号</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-red-800 uppercase tracking-wider">设备信息</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-red-800 uppercase tracking-wider">错误原因</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-red-100">
+                                {% for error in errors %}
+                                <tr>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-red-700">{{ error.row }}</td>
+                                    <td class="px-6 py-4 text-sm text-gray-700 max-w-xs truncate">
+                                        {{ error.data.name }} ({{ error.data.model }})
+                                    </td>
+                                    <td class="px-6 py-4 text-sm text-red-600">{{ error.error }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="flex space-x-4 pt-4 border-t border-gray-200">
+                <a href="/equipment/" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-2 px-6 rounded-md transition duration-300 flex items-center justify-center flex-1">
+                    <i class="fas fa-arrow-left mr-2"></i>返回设备列表
+                </a>
+                <a href="/equipment/batch/upload/" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded-md transition duration-300 flex items-center justify-center">
+                    <i class="fas fa-plus-circle mr-2"></i>继续批量上传
+                </a>
+            </div>
+        </div>
+    </main>
+
+    <footer class="bg-gray-800 text-white py-6 mt-12">
+        <div class="container mx-auto px-4 text-center">
+            <p>自控设备全生命周期管理平台 &copy; 2025</p>
+        </div>
+    </footer>
+
+    <script>
+        document.getElementById('toggleErrors').addEventListener('click', function() {
+            const errorDetails = document.getElementById('errorDetails');
+            const icon = this.querySelector('i');
+            if (errorDetails.classList.contains('hidden')) {
+                errorDetails.classList.remove('hidden');
+                icon.classList.remove('fa-chevron-down');
+                icon.classList.add('fa-chevron-up');
+                this.textContent = '隐藏错误详情';
+                this.prepend(icon);
+            } else {
+                errorDetails.classList.add('hidden');
+                icon.classList.remove('fa-chevron-up');
+                icon.classList.add('fa-chevron-down');
+                this.textContent = '查看错误详情';
+                this.prepend(icon);
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>登录 - 自控设备全生命周期管理平台</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#6B46C1', // 主色调改为紫色
+                        secondary: '#805AD5',
+                        accent: '#9F7AEA',
+                        neon: '#36CFFB',
+                        dark: '#F7FAFC',
+                        textPrimary: '#1A202C',
+                        textSecondary: '#4A5568',
+                        textTertiary: '#718096',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .bg-gradient-tech {
+                background: linear-gradient(135deg, #E8F3FF 0%, #F0F7FF 100%);
+            }
+            .text-shadow-neon {
+                text-shadow: 0 0 8px rgba(54, 207, 251, 0.5);
+            }
+            .border-glow {
+                box-shadow: 0 0 5px rgba(54, 207, 251, 0.7);
+            }
+            .card-hover {
+                transition: all 300ms ease;
+                will-change: transform;
+            }
+            .card-hover:hover {
+                box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.03), 0 0 10px rgba(54, 207, 251, 0.2);
+                transform: translateY(-1px);
+            }
+            .slant-divider {
+                clip-path: polygon(0 0, 100% 0, 70% 100%, 0 100%);
+            }
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-purple-50 to-indigo-50 text-black min-h-screen font-sans flex items-center justify-center">
+<!-- 添加背景装饰元素 -->
+<div class="fixed inset-0 -z-10 overflow-hidden">
+    <div class="absolute top-1/4 left-1/4 w-64 h-64 bg-purple-200 rounded-full opacity-20 blur-3xl"></div>
+    <div class="absolute top-3/4 right-1/4 w-80 h-80 bg-indigo-200 rounded-full opacity-20 blur-3xl"></div>
+    <div class="absolute bottom-1/4 left-1/3 w-40 h-40 bg-pink-200 rounded-full opacity-20 blur-3xl"></div>
+</div>
+
+<div class="min-h-screen flex items-center justify-center w-full p-4 sm:p-6">
+    <div class="w-full max-w-6xl bg-white rounded-xl shadow-2xl overflow-hidden">
+        <div class="flex flex-col md:flex-row h-full">
+            <!-- 左侧图像区域 - 使用斜切线设计 -->
+            <div class="w-full md:w-1/2 bg-gradient-to-br from-purple-600 to-indigo-600 p-8 flex flex-col justify-center items-center text-white slant-divider md:relative">
+                <!-- 科技装饰元素 -->
+                <div class="absolute top-0 left-0 w-full h-full opacity-10">
+                    <div class="absolute top-10 left-10 w-20 h-20 border-2 border-white rounded-full"></div>
+                    <div class="absolute top-20 left-20 w-10 h-10 border-2 border-white rounded-full"></div>
+                    <div class="absolute bottom-10 right-10 w-32 h-32 border-2 border-white rounded-full"></div>
+                    <div class="absolute bottom-24 right-24 w-16 h-16 border-2 border-white rounded-full"></div>
+                    <!-- 网格线 -->
+                    <div class="absolute inset-0 grid grid-cols-4 gap-4">
+                        {% for i in range(4) %}
+                        <div class="border-r border-white/20 h-full"></div>
+                        {% endfor %}
+                    </div>
+                    <div class="absolute inset-0 grid grid-rows-4 gap-4">
+                        {% for i in range(4) %}
+                        <div class="border-b border-white/20 w-full"></div>
+                        {% endfor %}
+                    </div>
+                </div>
+                
+                <h2 class="text-4xl font-bold mb-4 mt-[-20px] text-center md:text-left">自控设备全生命周期管理平台</h2>
+                <div class="w-full max-w-xs mb-8">
+                    <!-- 图像内容 -->
+                    <div class="relative w-full h-64 mb-8">
+                        <div class="absolute inset-0 bg-gradient-to-br from-purple-400/30 to-blue-500/30 rounded-2xl"></div>
+                        <!-- 3D风格插图 - 使用div和CSS创建简单表示 -->
+                        <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-48 h-48">
+                            <!-- 手机图形 -->
+                            <div class="absolute w-32 h-48 bg-blue-200/80 rounded-xl border-4 border-white/30 shadow-lg transform -rotate-12">
+                                <!-- 屏幕内容 -->
+                                <div class="absolute inset-2 bg-white/90 rounded-lg overflow-hidden">
+                                    <!-- 机器人图形 -->
+                                    <div class="absolute top-4 left-1/2 transform -translate-x-1/2 w-12 h-12 bg-gray-300 rounded-full border-2 border-gray-400">
+                                        <div class="absolute top-1 left-1 right-1 h-2 bg-gray-400 rounded-full"></div>
+                                        <div class="absolute top-4 left-3 w-1 h-1 bg-blue-500 rounded-full"></div>
+                                        <div class="absolute top-4 right-3 w-1 h-1 bg-blue-500 rounded-full"></div>
+                                        <div class="absolute top-6 left-1/2 transform -translate-x-1/2 w-4 h-1 bg-gray-400 rounded-full"></div>
+                                    </div>
+                                    <div class="absolute top-20 left-1/2 transform -translate-x-1/2 w-16 h-16 bg-blue-100 rounded-lg border-2 border-blue-200">
+                                        <div class="absolute inset-1 bg-blue-50 rounded-md"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- 人物图形 -->
+                            <div class="absolute -top-6 -left-8 w-16 h-24">
+                                <div class="w-10 h-10 bg-yellow-100 rounded-full border-2 border-yellow-200 mx-auto"></div>
+                                <div class="w-12 h-16 bg-blue-300 rounded-lg mt-1 mx-auto"></div>
+                                <div class="absolute top-14 left-1 w-14 h-8 bg-gray-200 rounded-lg"></div>
+                            </div>
+                            
+                            <!-- 人物图形2 -->
+                            <div class="absolute -bottom-6 -right-8 w-16 h-24">
+                                <div class="w-10 h-10 bg-pink-100 rounded-full border-2 border-pink-200 mx-auto"></div>
+                                <div class="w-12 h-16 bg-purple-300 rounded-lg mt-1 mx-auto"></div>
+                                <div class="absolute top-14 left-1 w-14 h-8 bg-gray-200 rounded-lg"></div>
+                            </div>
+                            
+                            <!-- 柱状图元素 -->
+                            <div class="absolute top-1/2 right-0 transform translate-y-1/2">
+                                <div class="w-2 h-16 bg-blue-300/80 rounded-full"></div>
+                                <div class="w-2 h-12 bg-blue-400/80 rounded-full ml-4 mt-2"></div>
+                                <div class="w-2 h-8 bg-blue-500/80 rounded-full ml-8 mt-2"></div>
+                            </div>
+                            
+                            <!-- 科技元素 -->
+                            <div class="absolute top-0 right-0 w-16 h-16 opacity-70">
+                                <div class="absolute inset-0 border-2 border-white/50 rounded-lg"></div>
+                                <div class="absolute top-2 left-2 w-2 h-2 bg-cyan-300 rounded-full"></div>
+                                <div class="absolute top-2 right-2 w-2 h-2 bg-cyan-300 rounded-full"></div>
+                                <div class="absolute bottom-2 left-2 w-2 h-2 bg-cyan-300 rounded-full"></div>
+                                <div class="absolute bottom-2 right-2 w-2 h-2 bg-cyan-300 rounded-full"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <p class="text-white/80 text-center mb-6 md:text-left ml-[-150px] mt-[90px]">智能监控、预测性维护、设备全生命周期管理解决方案</p>
+            </div>
+            
+            <!-- 右侧登录表单区域 - 扩大尺寸 -->
+            <div class="w-full md:w-1/2 p-12 md:p-16 flex items-center justify-center bg-white">
+                <div class="w-full max-w-lg">
+                    <h2 class="text-[clamp(1.75rem,3vw,2.25rem)] font-bold text-center text-gray-800 mb-8">用户登录</h2>
+                    
+                    {% if error_message %}
+                    <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-6">
+                        {{ error_message }}
+                    </div>
+                    {% endif %}
+                    
+                    <form method="post">
+                        <div class="mb-6">
+                            <label for="username" class="block text-sm font-medium text-gray-700 mb-1">用户名</label>
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                    <i class="fa fa-user text-gray-400 text-lg"></i>
+                                </div>
+                                <select id="username" name="username" required
+                                    class="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-all duration-200 shadow-sm appearance-none bg-white">
+                                    <option value="">请选择用户</option>
+                                    <option value="admin">管理员</option>
+                                    <option value="user">设备员</option>
+                                </select>
+                                <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                                    <i class="fa fa-chevron-down text-gray-400"></i>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-8">
+                            <label for="password" class="block text-sm font-medium text-gray-700 mb-1">密码</label>
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                    <i class="fa fa-lock text-gray-400 text-lg"></i>
+                                </div>
+                                <input type="password" id="password" name="password" required
+                                    class="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-all duration-200 shadow-sm">
+                            </div>
+                        </div>
+                        
+                        <div class="flex items-center mb-8">
+                            <input type="checkbox" id="remember-me" name="remember-me"
+                                class="h-5 w-5 text-primary focus:ring-primary border-gray-300 rounded">
+                            <label for="remember-me" class="ml-2 block text-sm text-gray-700">
+                                记住密码
+                            </label>
+                        </div>
+                        
+                        <div class="space-y-5">
+                            <button type="submit" 
+                                class="w-full bg-primary hover:bg-primary/90 text-white font-medium py-3 px-4 rounded-lg transition-all duration-200 flex items-center justify-center shadow-md hover:shadow-lg transform hover:-translate-y-0.5">
+                                <i class="fa fa-sign-in mr-2"></i> 登录
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

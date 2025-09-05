@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>批量上传设备</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="/static/font-awesome.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#0f172a',
+                        secondary: '#1e40af',
+                        accent: '#3b82f6',
+                        neon: '#06b6d4',
+                        dark: '#020617',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .bg-gradient-tech {
+                background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            }
+            .text-shadow-neon {
+                text-shadow: 0 0 8px rgba(6, 182, 212, 0.5);
+            }
+            .border-glow {
+                box-shadow: 0 0 5px rgba(6, 182, 212, 0.7);
+            }
+            .card-hover {
+                transition: all 300ms ease;
+                will-change: transform;
+            }
+            .card-hover:hover {
+                box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05), 0 0 10px rgba(6, 182, 212, 0.2);
+                transform: translateY(-1px);
+            }
+            .file-drop-area {
+                border: 2px dashed rgba(6, 182, 212, 0.3);
+                transition: all 300ms ease;
+            }
+            .file-drop-area:hover,
+            .file-drop-area.active {
+                border-color: rgba(6, 182, 212, 0.7);
+                background-color: rgba(6, 182, 212, 0.05);
+            }
+            .fade-in {
+                animation: fadeIn 0.5s ease-in;
+            }
+            @keyframes fadeIn {
+                from { opacity: 0; transform: translateY(10px); }
+                to { opacity: 1; transform: translateY(0); }
+            }
+        }
+    </style>
+</head>
+<body class="bg-dark text-gray-100 min-h-screen font-sans flex flex-col">
+    <header class="bg-primary border-b border-neon/30 shadow-lg">
+        <div class="container mx-auto px-4 py-6">
+            <h1 class="text-[clamp(1.8rem,5vw,3rem)] font-bold text-center text-white text-shadow-neon">
+                自控设备全生命周期管理平台
+            </h1>
+        </div>
+    </header>
+
+    <nav class="bg-primary/80 backdrop-blur-md shadow-md border-b border-neon/20 sticky top-0 z-10">
+        <div class="container mx-auto px-4">
+            <div class="flex justify-between items-center py-4">
+                <div class="flex items-center space-x-2 md:hidden">
+                    <button id="mobile-menu-btn" class="text-gray-300 hover:text-neon focus:outline-none" title="切换移动端菜单">
+                        <i class="fa fa-bars text-xl"></i>
+                    </button>
+                </div>
+                <ul id="main-nav" class="hidden md:flex space-x-8 py-2">
+                    <li><a href="/" class="font-medium text-gray-300 hover:text-neon px-1 py-2 transition-all duration-300 hover:border-b-2 hover:border-neon/50">首页</a></li>
+                    <li><a href="/equipment/" class="font-medium text-neon border-b-2 border-neon px-1 py-2 transition-all duration-300">设备管理</a></li>
+                    <li><a href="/documents/" class="font-medium text-gray-300 hover:text-neon px-1 py-2 transition-all duration-300 hover:border-b-2 hover:border-neon/50">文档管理</a></li>
+                    <li><a href="/maintenance/reminders/" class="font-medium text-gray-300 hover:text-neon px-1 py-2 transition-all duration-300 hover:border-b-2 hover:border-neon/50">维护提醒</a></li>
+                </ul>
+            </div>
+        </div>
+        <!-- 移动端菜单 -->
+        <div id="mobile-menu" class="hidden md:hidden bg-primary/95 border-t border-neon/20 absolute w-full">
+            <ul class="flex flex-col space-y-4 p-4">
+                <li><a href="/" class="font-medium text-gray-300 hover:text-neon block py-2 transition-all duration-300">首页</a></li>
+                <li><a href="/equipment/" class="font-medium text-neon block py-2 transition-all duration-300">设备管理</a></li>
+                <li><a href="/documents/" class="font-medium text-gray-300 hover:text-neon block py-2 transition-all duration-300">文档管理</a></li>
+                <li><a href="/maintenance/reminders/" class="font-medium text-gray-300 hover:text-neon block py-2 transition-all duration-300">维护提醒</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <script>
+        // 移动端菜单切换
+        document.getElementById('mobile-menu-btn').addEventListener('click', function() {
+            const mobileMenu = document.getElementById('mobile-menu');
+            mobileMenu.classList.toggle('hidden');
+        });
+    </script>
+
+    <main class="flex-grow container mx-auto px-4 py-8">
+        <div class="max-w-3xl mx-auto">
+            <div class="bg-primary rounded-xl shadow-lg overflow-hidden card-hover fade-in border border-neon/20">
+                <div class="bg-gradient-tech py-6 px-8 border-b border-neon/20">
+                    <h2 class="text-2xl font-bold text-white flex items-center text-shadow-neon">
+                        <i class="fa fa-file-import mr-3 text-neon"></i>批量上传设备数据
+                    </h2>
+                    <p class="text-gray-300 mt-1">高效导入多个设备信息，支持Excel文件格式</p>
+                </div>
+
+                <div class="p-8">
+                    <form action="/equipment/batch/upload/" method="post" enctype="multipart/form-data" class="space-y-8">
+                        <div class="file-drop-area rounded-lg p-8 flex flex-col items-center justify-center text-center cursor-pointer"
+                            id="fileDropArea">
+                            <i class="fa fa-cloud-upload-alt text-5xl text-neon mb-4"></i>
+                            <p class="text-lg font-medium text-gray-300 mb-2">拖放Excel文件到此处或</p>
+                            <label for="file" class="bg-neon hover:bg-neon/90 text-primary font-medium py-2 px-6 rounded-md transition-all duration-300 inline-flex items-center shadow-lg shadow-neon/20 hover:shadow-neon/40 hover:shadow-lg">
+                                <i class="fa fa-folder-open mr-2"></i>选择文件
+                            </label>
+                            <input type="file" id="file" name="file" accept=".xlsx" required
+                                class="hidden"
+                                onchange="document.getElementById('fileInfo').textContent = this.files[0] ? this.files[0].name : '未选择任何文件'">
+                            <p id="fileInfo" class="mt-4 text-gray-500 text-sm">未选择任何文件</p>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div class="flex items-center p-3 bg-dark rounded-lg border border-neon/10">
+                                <input type="checkbox" id="skip_errors" name="skip_errors" value="true"
+                                    class="h-5 w-5 text-neon focus:ring-neon border-gray-600 rounded">
+                                <label for="skip_errors" class="ml-3 block text-gray-300">跳过错误行</label>
+                            </div>
+
+                            <div class="flex items-center p-3 bg-dark rounded-lg border border-neon/10">
+                                <input type="checkbox" id="override_existing" name="override_existing" value="true"
+                                    class="h-5 w-5 text-neon focus:ring-neon border-gray-600 rounded">
+                                <label for="override_existing" class="ml-3 block text-gray-300">覆盖现有设备</label>
+                            </div>
+                        </div>
+
+                        <div class="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4 pt-4">
+                            <button type="submit" class="bg-accent hover:bg-accent/90 text-white font-medium py-3 px-6 rounded-md flex items-center justify-center flex-1 transition-all duration-300 shadow-lg shadow-accent/20 hover:shadow-accent/40 hover:shadow-lg border-glow">
+                                <i class="fa fa-upload mr-2"></i>上传文件
+                            </button>
+                            <a href="/equipment/template/download/" class="bg-dark hover:bg-primary text-gray-300 font-medium py-3 px-6 rounded-md transition-all duration-300 flex items-center justify-center border border-neon/20 hover:border-neon/50">
+                                <i class="fa fa-download mr-2"></i>下载模板
+                            </a>
+                        </div>
+                    </form>
+
+                    <div class="mt-8 p-5 bg-dark rounded-lg border border-neon/20 fade-in fade-in-delay-200"></div>
+                        <h3 class="text-lg font-medium text-neon mb-3 flex items-center">
+                            <i class="fa fa-info-circle mr-2"></i>文件格式要求
+                        </h3>
+                        <ul class="space-y-3 text-gray-300">
+                            <li class="flex items-start">
+                                <i class="fa fa-check-circle text-green-500 mt-1 mr-2"></i>
+                                <span>文件必须为Excel格式 (.xlsx)</span>
+                            </li>
+                            <li class="flex items-start">
+                                <i class="fa fa-check-circle text-green-500 mt-1 mr-2"></i>
+                                <span>必须包含以下列: <code class="bg-primary px-1 py-0.5 rounded text-sm font-medium text-neon">name</code>(设备名称), <code class="bg-primary px-1 py-0.5 rounded text-sm font-medium text-neon">model</code>(型号), <code class="bg-primary px-1 py-0.5 rounded text-sm font-medium text-neon">location</code>(位置), <code class="bg-primary px-1 py-0.5 rounded text-sm font-medium text-neon">status</code>(状态)</span>
+                            </li>
+                            <li class="flex items-start">
+                                <i class="fa fa-check-circle text-green-500 mt-1 mr-2"></i>
+                                <span>可选列: <code class="bg-primary px-1 py-0.5 rounded text-sm font-medium text-neon">production_number</code>(生产编号), <code class="bg-primary px-1 py-0.5 rounded text-sm font-medium text-neon">manufacturer</code>(制造商), <code class="bg-primary px-1 py-0.5 rounded text-sm font-medium text-neon">installation_date</code>(安装日期)</span>
+                            </li>
+                            <li class="flex items-start">
+                                <i class="fa fa-check-circle text-green-500 mt-1 mr-2"></i>
+                                <span>日期格式: <code class="bg-primary px-1 py-0.5 rounded text-sm font-medium text-neon">YYYY-MM-DD</code></span>
+                            </li>
+                            <li class="flex items-start">
+                                <i class="fa fa-check-circle text-green-500 mt-1 mr-2"></i>
+                                <span>状态只能是: <code class="bg-primary px-1 py-0.5 rounded text-sm font-medium text-neon">未安装</code> 或 <code class="bg-primary px-1 py-0.5 rounded text-sm font-medium text-neon">运行中</code></span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="bg-primary border-t border-neon/30 py-6 mt-12">
+        <div class="container mx-auto px-4 text-center">
+            <p class="flex items-center justify-center space-x-2 text-gray-400">
+                    <i class="fa fa-copyright"></i>
+                    <span>自控设备全生命周期管理平台 &copy; 2025</span>
+                </p>
+        </div>
+    </footer>
+
+    <script>
+        // 文件拖放功能
+        const fileDropArea = document.getElementById('fileDropArea');
+        const fileInput = document.getElementById('file');
+        const fileInfo = document.getElementById('fileInfo');
+
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            fileDropArea.addEventListener(eventName, preventDefaults, false);
+        });
+
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        ['dragenter', 'dragover'].forEach(eventName => {
+            fileDropArea.addEventListener(eventName, highlight, false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            fileDropArea.addEventListener(eventName, unhighlight, false);
+        });
+
+        function highlight() {
+            fileDropArea.classList.add('active');
+        }
+
+        function unhighlight() {
+            fileDropArea.classList.remove('active');
+        }
+
+        fileDropArea.addEventListener('drop', handleDrop, false);
+
+        function handleDrop(e) {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+
+            if (files.length) {
+                fileInput.files = files;
+                fileInfo.textContent = files[0].name;
+            }
+        }
+
+        // 点击区域触发文件选择
+        fileDropArea.addEventListener('click', () => {
+            fileInput.click();
+        });
+    </script>
+</body>
+</html>

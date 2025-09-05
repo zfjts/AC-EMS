@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>故障报告详情</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
+    <script>
+
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#3B82F6',
+                        secondary: '#10B981',
+                        accent: '#6366F1',
+                        danger: '#EF4444',
+                        warning: '#F59E0B',
+                        info: '#3B82F6',
+                        light: '#F3F4F6',
+                        dark: '#1F2937',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .card-shadow {
+                box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            }
+            .transition-custom {
+                transition: all 0.3s ease;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen flex flex-col">
+    <!-- 顶部导航栏 -->
+    <header class="bg-white shadow-sm sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0 flex items-center">
+                        <i class="fa fa-cogs text-primary text-2xl mr-2"></i>
+                        <span class="text-xl font-bold text-dark">设备自动化管控平台</span>
+                    </div>
+                    <nav class="hidden md:ml-10 md:flex md:space-x-8">
+                        <a href="/dashboard/" class="border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                            <i class="fa fa-tachometer mr-1"></i> 仪表盘
+                        </a>
+                        <a href="/equipment/" class="border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                            <i class="fa fa-microchip mr-1"></i> 设备管理
+                        </a>
+                        <a href="/maintenance/" class="border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                            <i class="fa fa-wrench mr-1"></i> 维护管理
+                        </a>
+                        <a href="/inspection-standards/" class="border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                            <i class="fa fa-list-alt mr-1"></i> 点巡检标准
+                        </a>
+                        <a href="/fault-reports/" class="border-primary text-primary inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                            <i class="fa fa-exclamation-triangle mr-1"></i> 故障报告
+                        </a>
+                    </nav>
+                </div>
+                <div class="flex items-center">
+                    <button class="p-1 rounded-full text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary">
+                        <span class="sr-only">查看通知</span>
+                        <i class="fa fa-bell text-lg"></i>
+                    </button>
+                    <div class="ml-4 flex items-center md:ml-6"></div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- 主内容区 -->
+    <main class="flex-grow">
+        <div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+            <!-- 页面标题和操作按钮 -->
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-900">故障报告详情</h1>
+                    <p class="mt-1 text-sm text-gray-500">查看和管理故障报告的详细信息</p>
+                </div>
+                <div class="mt-4 sm:mt-0 flex space-x-3">
+                    <a href="/fault-reports/{{ report.id }}/edit/" class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-custom">
+                        <i class="fa fa-pencil mr-2"></i> 编辑报告
+                    </a>
+                    <button id="deleteBtn" data-id="{{ report.id }}" class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-danger hover:bg-danger/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-danger transition-custom">
+                        <i class="fa fa-trash mr-2"></i> 删除报告
+                    </button>
+                </div>
+            </div>
+
+            <!-- 报告详情卡片 -->
+            <div class="bg-white shadow overflow-hidden sm:rounded-lg mb-6">
+                <div class="px-4 py-5 sm:px-6">
+                    <div class="flex justify-between items-center">
+                        <h2 class="text-lg leading-6 font-medium text-gray-900">报告基本信息</h2>
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {% if report.status == 'pending' %}bg-yellow-100 text-yellow-800{% else %}bg-green-100 text-green-800{% endif %}">
+                            {{ '待处理' if report.status == 'pending' else '已解决' }}
+                        </span>
+                    </div>
+                </div>
+                <div class="border-t border-gray-200">
+                    <dl>
+                        <div class="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                            <dt class="text-sm font-medium text-gray-500">报告编号</dt>
+                            <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{{ report.id }}</dd>
+                        </div>
+                        <div class="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                            <dt class="text-sm font-medium text-gray-500">设备名称</dt>
+                            <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{{ report.equipment.name }}</dd>
+                        </div>
+                        <div class="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                            <dt class="text-sm font-medium text-gray-500">故障类型</dt>
+                            <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{{ report.fault_type }}</dd>
+                        </div>
+                        <div class="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                            <dt class="text-sm font-medium text-gray-500">报告日期</dt>
+                            <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{{ report.report_date.strftime('%Y-%m-%d') }}</dd>
+                        </div>
+                        <div class="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                            <dt class="text-sm font-medium text-gray-500">报告人</dt>
+                            <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{{ report.created_by }}</dd>
+                        </div>
+                    </dl>
+                </div>
+            </div>
+
+            <!-- 故障描述 -->
+            <div class="bg-white shadow overflow-hidden sm:rounded-lg mb-6">
+                <div class="px-4 py-5 sm:px-6">
+                    <h3 class="text-lg leading-6 font-medium text-gray-900">故障描述</h3>
+                </div>
+                <div class="px-4 py-5 sm:px-6">
+                    <p class="text-sm text-gray-900 whitespace-pre-line">{{ report.description }}</p>
+                </div>
+            </div>
+
+            <!-- 故障图片 -->
+            {% if report.image_path %}
+            <div class="bg-white shadow overflow-hidden sm:rounded-lg mb-6">
+                <div class="px-4 py-5 sm:px-6">
+                    <h3 class="text-lg leading-6 font-medium text-gray-900">故障图片</h3>
+                </div>
+                <div class="px-4 py-5 sm:px-6">
+                    <img src="{{ report.image_path }}" alt="故障图片" class="max-w-full h-auto rounded-md shadow-sm">
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- 处理记录 -->
+            {% if report.status == 'resolved' %}
+            <div class="bg-white shadow overflow-hidden sm:rounded-lg mb-6">
+                <div class="px-4 py-5 sm:px-6">
+                    <h3 class="text-lg leading-6 font-medium text-gray-900">处理记录</h3>
+                </div>
+                <div class="border-t border-gray-200">
+                    <dl>
+                        <div class="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                            <dt class="text-sm font-medium text-gray-500">解决日期</dt>
+                            <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{{ report.resolved_date.strftime('%Y-%m-%d %H:%M:%S') }}</dd>
+                        </div>
+                        <div class="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                            <dt class="text-sm font-medium text-gray-500">处理措施</dt>
+                            <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{{ report.resolution }}</dd>
+                        </div>
+                        <div class="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                            <dt class="text-sm font-medium text-gray-500">处理成本</dt>
+                            <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{{ '¥%.2f'|format(report.cost) if report.cost else '未记录' }}</dd>
+                        </div>
+                        <div class="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                            <dt class="text-sm font-medium text-gray-500">处理时长 (小时)</dt>
+                            <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{{ '%.2f'|format(report.duration) if report.duration else '未记录' }}</dd>
+                        </div>
+                    </dl>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- 返回按钮 -->
+            <div class="flex justify-center mt-8">
+                <a href="/fault-reports/" class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-custom">
+                    <i class="fa fa-arrow-left mr-2"></i> 返回故障报告列表
+                </a>
+            </div>
+        </div>
+    </main>
+
+    <!-- 页脚 -->
+    <footer class="bg-white border-t border-gray-200 py-4 mt-8">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <p class="text-center text-sm text-gray-500">© 2023 设备自动化管控平台. 保留所有权利.</p>
+        </div>
+    </footer>
+
+    <!-- 删除确认模态框 -->
+    <div id="deleteModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+            <div class="text-center">
+                <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100">
+                    <i class="fa fa-exclamation-triangle text-red-500 text-xl"></i>
+                </div>
+                <h3 class="mt-2 text-lg leading-6 font-medium text-gray-900">确认删除</h3>
+                <div class="mt-4 text-sm text-gray-500">
+                    <p>您确定要删除此故障报告吗？此操作无法撤销。</p>
+                </div>
+                <div class="mt-6 flex justify-center space-x-4">
+                    <button id="cancelDelete" class="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-custom">
+                        取消
+                    </button>
+                    <button id="confirmDelete" class="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-danger hover:bg-danger/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-danger transition-custom">
+                        确认删除
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 删除确认功能
+        document.addEventListener('DOMContentLoaded', function() {
+            const deleteBtn = document.getElementById('deleteBtn');
+            const deleteModal = document.getElementById('deleteModal');
+            const cancelDelete = document.getElementById('cancelDelete');
+            const confirmDelete = document.getElementById('confirmDelete');
+            let reportId = null;
+
+            deleteBtn.addEventListener('click', function() {
+                reportId = this.getAttribute('data-id');
+                deleteModal.classList.remove('hidden');
+            });
+
+            cancelDelete.addEventListener('click', function() {
+                deleteModal.classList.add('hidden');
+                reportId = null;
+            });
+
+            confirmDelete.addEventListener('click', async function() {
+                if (reportId) {
+                    try {
+                        const response = await fetch(`/fault-reports/delete/${reportId}`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            }
+                        });
+
+                        if (response.ok) {
+                            window.location.href = '/fault-reports/';
+                        } else {
+                            alert('删除失败，请重试。');
+                        }
+                    } catch (error) {
+                        console.error('Error:', error);
+                        alert('删除失败，请重试。');
+                    }
+                }
+            });
+
+            // 点击模态框外部关闭
+            deleteModal.addEventListener('click', function(e) {
+                if (e.target === deleteModal) {
+                    deleteModal.classList.add('hidden');
+                    reportId = null;
+                }
+            });
+        });
+    </script>
+</body>
+</html>

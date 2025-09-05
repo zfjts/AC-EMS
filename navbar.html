@@ -1,0 +1,98 @@
+<nav class="bg-gradient-to-r from-blue-500 to-blue-700 backdrop-blur-md shadow-lg sticky top-0 z-50 transition-all duration-300 border-b border-blue-400/30">
+    <div class="container mx-auto px-4">
+        <div class="flex justify-between items-center py-3">
+            <div class="flex items-center space-x-2 md:hidden">
+                <button id="mobile-menu-btn" class="text-white hover:text-blue-200 focus:outline-none transition-colors duration-300" title="切换移动端菜单">
+                    <i class="fa fa-bars text-xl"></i>
+                </button>
+            </div>
+            <ul id="main-nav" class="hidden md:flex space-x-1 py-1">
+                    <li><a href="/" class="font-medium text-white px-4 py-3 rounded-md transition-all duration-300 hover:bg-blue-700 flex items-center"><i class="fa fa-home mr-2"></i>首页</a></li>
+                    <li><a href="/equipment/" class="font-medium text-white px-4 py-3 rounded-md transition-all duration-300 hover:bg-blue-700 flex items-center"><i class="fa fa-cogs mr-2"></i>设备管理</a></li>
+                    <li><a href="/maintenance/reminders/" class="font-medium text-white px-4 py-3 rounded-md transition-all duration-300 hover:bg-blue-700 flex items-center"><i class="fa fa-bell mr-2"></i>维护提醒</a></li>
+                    <li><a href="/monitoring/" class="font-medium text-white px-4 py-3 rounded-md transition-all duration-300 hover:bg-blue-700 flex items-center"><i class="fa fa-line-chart mr-2"></i>生命周期分析</a></li>
+                    <li><a href="/documents/" class="font-medium text-white px-4 py-3 rounded-md transition-all duration-300 hover:bg-blue-700 flex items-center"><i class="fa-solid fa-file-lines mr-2"></i>文档管理</a></li>
+                    <li><a href="/maintenance/" class="font-medium text-white px-4 py-3 rounded-md transition-all duration-300 hover:bg-blue-700 flex items-center"><i class="fa fa-wrench mr-2"></i>检维修管理</a></li>
+                    <li><a href="/spare-parts/parts/" class="font-medium text-white px-4 py-3 rounded-md transition-all duration-300 hover:bg-blue-700 flex items-center"><i class="fa fa-cubes mr-2"></i>配件管理</a></li>
+            </ul>
+
+            <!-- 登录用户头像 - 确保在所有页面显示 -->
+            {% if current_user %}
+            <div class="relative ml-4">
+                <button id="user-menu-btn" class="flex items-center justify-center w-10 h-10 rounded-full bg-red-600 text-white hover:bg-red-500 transition-all duration-300 focus:outline-none ring-2 ring-red-400 ring-opacity-70" title="用户菜单">
+                    <i class="fa fa-user"></i>
+                </button>
+                <!-- 下拉菜单 -->
+                <div id="user-menu" class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-10 hidden">
+                    <div class="px-4 py-3 border-b border-gray-100">
+                        <p class="text-sm font-medium text-gray-800">
+                            {{ current_user.username }}
+                        </p>
+                        <p class="text-xs text-gray-500">
+                            {{ '管理员' if current_user.role == 'admin' else '设备员' if current_user.role == 'user' else '游客' }}
+                        </p>
+                    </div>
+                    <a href="/logout" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                        <i class="fa fa-sign-out mr-2"></i> 退出登录
+                    </a>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    <!-- 移动端菜单 -->
+    <div id="mobile-menu" class="hidden md:hidden bg-blue-800 absolute w-full shadow-lg transform transition-transform duration-300 ease-in-out">
+        <ul class="flex flex-col p-2">
+                    <li><a href="/" class="font-medium text-white block px-4 py-3 rounded-md transition-all duration-300 hover:bg-blue-700 flex items-center"><i class="fa fa-home mr-2"></i>首页</a></li>
+                    <li><a href="/equipment/" class="font-medium text-white block px-4 py-3 rounded-md transition-all duration-300 hover:bg-blue-700 flex items-center"><i class="fa fa-cogs mr-2"></i>设备管理</a></li>
+                    <li><a href="/maintenance/reminders/" class="font-medium text-white block px-4 py-3 rounded-md transition-all duration-300 hover:bg-blue-700 flex items-center"><i class="fa fa-bell mr-2"></i>维护提醒</a></li>
+                    <li><a href="/monitoring/" class="font-medium text-white block px-4 py-3 rounded-md transition-all duration-300 hover:bg-blue-700 flex items-center"><i class="fa fa-line-chart mr-2"></i>生命周期分析</a></li>
+                    <li><a href="/documents/" class="font-medium text-white block px-4 py-3 rounded-md transition-all duration-300 hover:bg-blue-700 flex items-center"><i class="fa-solid fa-file-lines mr-2"></i>文档管理</a></li>
+                    <li><a href="/maintenance/" class="font-medium text-white block px-4 py-3 rounded-md transition-all duration-300 hover:bg-blue-700 flex items-center"><i class="fa fa-wrench mr-2"></i>检维修管理</a></li>
+                    <li><a href="/spare-parts/parts/" class="font-medium text-white block px-4 py-3 rounded-md transition-all duration-300 hover:bg-blue-700 flex items-center"><i class="fa fa-cubes mr-2"></i>配件管理</a></li>
+        </ul>
+    </div>
+</nav>
+
+<script>
+    // 移动端菜单切换
+    document.addEventListener('DOMContentLoaded', function() {
+        const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+        const mobileMenu = document.getElementById('mobile-menu');
+        
+        // 移动端菜单切换
+        if (mobileMenuBtn && mobileMenu) {
+            mobileMenuBtn.addEventListener('click', function() {
+                mobileMenu.classList.toggle('hidden');
+            });
+        }
+
+        // 高亮当前页面导航项
+        const currentPath = window.location.pathname;
+        const navLinks = document.querySelectorAll('#main-nav a, #mobile-menu a');
+
+        navLinks.forEach(link => {
+            if (link.getAttribute('href') === currentPath) {
+                link.classList.add('border-b-2', 'border-primary');
+                link.classList.remove('hover:border-primary/50');
+            }
+        });
+
+        // 用户菜单切换
+        const userMenuBtn = document.getElementById('user-menu-btn');
+        const userMenu = document.getElementById('user-menu');
+
+        if (userMenuBtn && userMenu) {
+            userMenuBtn.addEventListener('click', function() {
+                userMenu.classList.toggle('hidden');
+            });
+
+            // 点击其他区域关闭菜单
+            document.addEventListener('click', function(event) {
+                if (!userMenuBtn.contains(event.target) && !userMenu.contains(event.target)) {
+                    userMenu.classList.add('hidden');
+                }
+            });
+        }
+    });
+</script>

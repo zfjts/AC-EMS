@@ -1,0 +1,73 @@
+{% for i in range(1, (selected_parts|length or 1) + 1) %}
+<div class="maintenance-spare-part-item mb-4 p-4 border rounded-md bg-gray-50">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">备件</label>
+            <select name="spare_part_id_{{ i }}" class="w-full border rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" required title="选择备件"></select>
+                <option value="">选择备件</option>
+                {% for part in spare_parts %}
+                <option value="{{ part.id }}" {% if selected_parts and selected_parts[i-1].spare_part_id == part.id %}selected{% endif %}>{{ part.name }} ({{ part.code }}) - 当前库存: {{ part.current_stock }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">数量</label>
+            <input type="number" name="quantity_{{ i }}" min="1" value="{{ selected_parts[i-1].quantity if selected_parts and selected_parts[i-1].quantity else 1 }}" class="w-full border rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" required title="请输入备件数量" placeholder="请输入数量">
+        </div>
+        <div class="flex items-end">
+            <button type="button" class="remove-spare-part-btn bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-md transition duration-300 shadow-sm ml-2">
+                <i class="fa fa-trash mr-1"></i>移除
+            </button>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+<div class="flex justify-end mt-4">
+    <button type="button" id="add-spare-part-btn" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-md transition duration-300 shadow-sm">
+        <i class="fa fa-plus mr-1"></i>添加备件
+    </button>
+</div>
+
+<script>
+    // 添加备件按钮事件
+    document.getElementById('add-spare-part-btn').addEventListener('click', function() {
+        const itemCount = document.querySelectorAll('.maintenance-spare-part-item').length;
+        const newIndex = itemCount + 1;
+        
+        // 克隆最后一个备件项并修改名称
+        const lastItem = document.querySelector('.maintenance-spare-part-item:last-child');
+        const newItem = lastItem.cloneNode(true);
+        
+        // 更新select和input的名称
+        newItem.querySelector('select').name = `spare_part_id_${newIndex}`;
+        newItem.querySelector('select').value = '';
+        newItem.querySelector('input').name = `quantity_${newIndex}`;
+        newItem.querySelector('input').value = '1';
+        
+        // 插入到按钮前
+        lastItem.parentNode.insertBefore(newItem, document.getElementById('add-spare-part-btn').parentNode);
+    });
+
+    // 移除备件按钮事件
+    document.addEventListener('click', function(e) {
+        if (e.target.closest('.remove-spare-part-btn')) {
+            const item = e.target.closest('.maintenance-spare-part-item');
+            const items = document.querySelectorAll('.maintenance-spare-part-item');
+            
+            // 确保至少保留一个备件项
+            if (items.length > 1) {
+                item.remove();
+                
+                // 重新编号剩余项
+                document.querySelectorAll('.maintenance-spare-part-item').forEach((item, index) => {
+                    const newIndex = index + 1;
+                    item.querySelector('select').name = `spare_part_id_${newIndex}`;
+                    item.querySelector('input').name = `quantity_${newIndex}`;
+                });
+            } else {
+                alert('至少需要保留一个备件');
+            }
+        }
+    });
+</script>

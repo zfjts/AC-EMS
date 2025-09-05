@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>生命周期分析</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="/static/chart.umd.min.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .align-middle {
+                vertical-align: middle;
+            }
+        }
+    </style>
+</head>
+<body class="bg-white text-black min-h-screen font-sans">
+    <header class="bg-gradient-to-r from-blue-600 to-blue-800 py-6 shadow-md">
+        <div class="container mx-auto px-4">
+            <h1 class="text-3xl font-bold text-center text-white">自控设备全生命周期管理平台</h1>
+        </div>
+    </header>
+
+    {% include 'navbar.html' %}
+
+    <main class="container mx-auto px-4 py-8">
+        <div class="flex justify-between items-center mb-6">
+            <h2 class="text-2xl font-semibold text-black">生命周期分析</h2>
+        </div>
+
+        <!-- 图表区域 -->
+        <section class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
+            <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+                <div class="mb-6">
+                    <h3 class="text-xl font-semibold text-black">设备寿命</h3>
+                </div>
+                <div class="h-80">
+                    <canvas id="equipmentLifespanChart"></canvas>
+                </div>
+            </div>
+            <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+                <div class="mb-6">
+                    <h3 class="text-xl font-semibold text-black">维护周期</h3>
+                </div>
+                <div class="h-80">
+                    <canvas id="maintenanceCycleChart"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <section class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
+            <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+                <h3 class="text-xl font-semibold mb-6 text-black">设备维护历史</h3>
+                <div class="h-80">
+                    <canvas id="maintenanceHistoryChart"></canvas>
+                </div>
+            </div>
+            <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+                <h3 class="text-xl font-semibold mb-6 text-black">设备类型分布</h3>
+                <div class="h-80">
+                    <canvas id="equipmentTypeChart"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <!-- 设备列表 -->
+        <section class="bg-white rounded-xl p-6 shadow-sm border border-gray-100 mb-12">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-xl font-semibold text-black">设备详情</h3>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-700">
+                    <thead>
+                    <tr>
+                        <th class="px-4 py-3 text-center text-xs font-medium text-black uppercase tracking-wider align-middle">设备名称</th>
+                        <th class="px-4 py-3 text-center text-xs font-medium text-black uppercase tracking-wider align-middle">型号</th>
+                        <th class="px-4 py-3 text-center text-xs font-medium text-black uppercase tracking-wider align-middle">工作寿命(月)</th>
+                        <th class="px-4 py-3 text-center text-xs font-medium text-black uppercase tracking-wider align-middle">维护周期(月)</th>
+                        <th class="px-4 py-3 text-center text-xs font-medium text-black uppercase tracking-wider align-middle">已使用时间(月)</th>
+                        <th class="px-4 py-3 text-center text-xs font-medium text-black uppercase tracking-wider align-middle">剩余寿命(月)</th>
+                        <th class="px-4 py-3 text-center text-xs font-medium text-black uppercase tracking-wider align-middle">下次维护日期</th>
+                        <th class="px-4 py-3 text-center text-xs font-medium text-black uppercase tracking-wider align-middle">状态</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100" id="equipment-details">
+                    <!-- 数据将通过JavaScript动态加载 -->
+                    <tr class="animate-pulse">
+                        <td colspan="8" class="px-4 py-8 text-center text-black align-middle">加载中...</td>
+                    </tr>
+                </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <footer class="bg-white py-8 mt-12 border-t border-gray-100">
+        <div class="container mx-auto px-4 text-center">
+            <p>自控设备全生命周期管理平台 &copy; 2025</p>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            let allData = null;
+            let lifespanChart = null;
+            let cycleChart = null;
+            let historyChart = null;
+            let typeChart = null;
+            // 设备类型列表，与设备管理中的实际设备类型保持一致
+            let equipmentTypes = ['DCS', 'PLC', '变送器', '热电阻', '热电偶', '调节阀', '切断阀', '物位计', '压力表', '双金属温度计', '分析仪表', '流量计', '其它'];
+            // 初始化设备类型筛选下拉框
+            // 从服务器获取生命周期分析数据
+            fetch('/monitoring/data/')
+                .then(response => response.json())
+                .then(data => {
+                    allData = data;
+                    // 初始化图表
+                    initCharts(data);
+                    // 填充设备详情表
+                    populateEquipmentDetails(data.equipment_details);
+                })
+                .catch(error => {
+                    console.error('获取数据失败:', error);
+                    // 显示错误信息
+                    document.getElementById('equipment-details').innerHTML = 
+                        '<tr><td colspan="8" class="px-4 py-8 text-center text-red-500">加载数据失败</td></tr>';
+                });
+
+            function initCharts(data) {
+                // 设备寿命图表 - 按设备类型显示工作寿命
+                const lifespanCtx = document.getElementById('equipmentLifespanChart').getContext('2d');
+                // 按设备类型分组并计算工作寿命
+                const typeWorkingLifespans = {};
+                data.equipment_details.forEach(item => {
+                    if (!typeWorkingLifespans[item.type]) {
+                        typeWorkingLifespans[item.type] = [];
+                    }
+                    typeWorkingLifespans[item.type].push(item.working_life);
+                });
+                
+                // 计算每种设备类型的平均工作寿命
+                const lifespanTypeLabels = Object.keys(typeWorkingLifespans);
+                const lifespanTypeData = lifespanTypeLabels.map(type => {
+                    const sum = typeWorkingLifespans[type].reduce((acc, val) => acc + val, 0);
+                    return Math.round(sum / typeWorkingLifespans[type].length);
+                });
+                
+                lifespanChart = new Chart(lifespanCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: lifespanTypeLabels,
+                        datasets: [{
+                            label: '工作寿命(月)',
+                            data: lifespanTypeData,
+                            backgroundColor: '#3b82f6',
+                            borderColor: '#1d4ed8',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'top',
+                                labels: {
+                                    color: '#4b5563',
+                                    padding: 15,
+                                    font: {
+                                        size: 12
+                                    }
+                                }
+                            },
+                            tooltip: {
+                                backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                                titleColor: '#1e293b',
+                                bodyColor: '#4b5563',
+                                borderColor: '#e2e8f0',
+                                borderWidth: 1,
+                                padding: 12,
+                                cornerRadius: 8,
+                                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
+                            }
+                        },
+                        scales: {
+                            y: {
+                                stacked: true,
+                                beginAtZero: true,
+                                ticks: {
+                                    color: '#4b5563'
+                                },
+                                grid: {
+                                    color: 'rgba(0, 0, 0, 0.05)'
+                                }
+                            },
+                            x: {
+                                stacked: true,
+                                ticks: {
+                                    color: '#4b5563',
+                                    font: {
+                                        size: 11
+                                    }
+                                },
+                                grid: {
+                                    display: false
+                                }
+                            }
+                        },
+                        animation: {
+                            duration: 1000,
+                            easing: 'easeOutQuart'
+                        }
+                    }
+                });
+
+                // 维护周期图表
+                const cycleCtx = document.getElementById('maintenanceCycleChart').getContext('2d');
+                // 按设备类型分组并计算平均维护周期
+                const typeMaintenanceCycles = {};
+                allData.equipment_details.forEach(item => {
+                    if (!typeMaintenanceCycles[item.type]) {
+                        typeMaintenanceCycles[item.type] = { sum: 0, count: 0 };
+                    }
+                    typeMaintenanceCycles[item.type].sum += item.maintenance_cycle;
+                    typeMaintenanceCycles[item.type].count++;
+                });
+                
+                // 计算每种设备类型的平均维护周期
+                const typeLabels = Object.keys(typeMaintenanceCycles);
+                const typeData = typeLabels.map(type => 
+                    Math.round(typeMaintenanceCycles[type].sum / typeMaintenanceCycles[type].count)
+                );
+                
+                cycleChart = new Chart(cycleCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: typeLabels,
+                        datasets: [{
+                            label: '维护周期(月)',
+                            data: typeData,
+                            backgroundColor: '#8b5cf6',
+                            borderColor: '#5b21b6',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'top',
+                                labels: {
+                                    color: '#000000',
+                                }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    color: '#000000'
+                                },
+                                grid: {
+                                    color: 'rgba(0, 0, 0, 0.1)'
+                                }
+                            },
+                            x: {
+                                ticks: {
+                                    color: '#000000',
+                                    font: {
+                                        size: 10
+                                    }
+                                },
+                                grid: {
+                                    color: 'rgba(255, 255, 255, 0.1)'
+                                }
+                            }
+                        }
+                    }
+                });
+
+                // 设备维护历史图表
+                const historyCtx = document.getElementById('maintenanceHistoryChart').getContext('2d');
+                historyChart = new Chart(historyCtx, {
+                    type: 'line',
+                    data: {
+                        labels: data.maintenance_history.map(item => item.month),
+                        datasets: [{
+                            label: '维护次数',
+                            data: data.maintenance_history.map(item => item.count),
+                            backgroundColor: '#10b981',
+                            borderColor: '#047857',
+                            borderWidth: 2,
+                            fill: false,
+                            tension: 0.1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: false
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    color: '#000000'
+                                },
+                                grid: {
+                                    color: 'rgba(255, 255, 255, 0.1)'
+                                }
+                            },
+                            x: {
+                                ticks: {
+                                    color: '#000000',
+                                    font: {
+                                        size: 12
+                                    }
+                                },
+                                grid: {
+                                    color: 'rgba(255, 255, 255, 0.1)'
+                                }
+                            }
+                        }
+                    }
+                });
+
+                // 设备类型分布图表
+                const typeCtx = document.getElementById('equipmentTypeChart').getContext('2d');
+                typeChart = new Chart(typeCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: Object.keys(data.equipment_type_distribution),
+                        datasets: [{
+                            data: Object.values(data.equipment_type_distribution),
+                            backgroundColor: [
+                                '#10b981', // 绿色
+                                '#f59e0b', // 黄色
+                                '#ef4444', // 红色
+                                '#6b7280', // 灰色
+                                '#3b82f6', // 蓝色
+                                '#8b5cf6', // 紫色
+                                '#ec4899', // 粉色
+                                '#06b6d4'  // 青色
+                            ],
+                            borderColor: '#0f172a',
+                            borderWidth: 2
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'right',
+                                labels: {
+                                    color: '#000000',
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // 更新设备寿命图表
+            function updateLifespanChart() {
+                if (!allData || !lifespanChart) return;
+                
+                // 显示所有设备类型的平均工作寿命
+                const typeWorkingLifespans = {};
+                allData.equipment_details.forEach(item => {
+                    if (!typeWorkingLifespans[item.type]) {
+                        typeWorkingLifespans[item.type] = [];
+                    }
+                    typeWorkingLifespans[item.type].push(item.working_life);
+                });
+                
+                const lifespanTypeLabels = Object.keys(typeWorkingLifespans);
+                const lifespanTypeData = lifespanTypeLabels.map(type => {
+                    const sum = typeWorkingLifespans[type].reduce((acc, val) => acc + val, 0);
+                    return Math.round(sum / typeWorkingLifespans[type].length);
+                });
+                
+                lifespanChart.data.labels = lifespanTypeLabels;
+                lifespanChart.data.datasets[0].data = lifespanTypeData;
+                
+                lifespanChart.update();
+            }
+            
+            // 更新维护周期图表
+            function updateCycleChart() {
+                if (!allData || !cycleChart) return;
+                
+                // 显示所有设备类型的维护周期
+                const typeMaintenanceCycles = {};
+                allData.equipment_details.forEach(item => {
+                    if (!typeMaintenanceCycles[item.type]) {
+                        typeMaintenanceCycles[item.type] = { sum: 0, count: 0 };
+                    }
+                    typeMaintenanceCycles[item.type].sum += item.maintenance_cycle;
+                    typeMaintenanceCycles[item.type].count++;
+                });
+                
+                const typeLabels = Object.keys(typeMaintenanceCycles);
+                const typeData = typeLabels.map(type => 
+                    Math.round(typeMaintenanceCycles[type].sum / typeMaintenanceCycles[type].count)
+                );
+                
+                cycleChart.data.labels = typeLabels;
+                cycleChart.data.datasets[0].data = typeData;
+                
+                cycleChart.update();
+            }
+            
+            let currentPage = 1;
+            const pageSize = 10;
+            let totalPages = 1;
+            let allEquipmentDetails = [];
+
+            function populateEquipmentDetails(equipmentDetails) {
+                allEquipmentDetails = equipmentDetails;
+                totalPages = Math.ceil(equipmentDetails.length / pageSize);
+                currentPage = 1; // 重置到第一页
+                renderTable(1);
+            }
+
+            function renderTable(page) {
+                currentPage = page;
+                const container = document.getElementById('equipment-details');
+                container.innerHTML = '';
+
+                // 计算当前页的数据范围
+                const startIndex = (page - 1) * pageSize;
+                const endIndex = Math.min(startIndex + pageSize, allEquipmentDetails.length);
+                const currentPageData = allEquipmentDetails.slice(startIndex, endIndex);
+
+                currentPageData.forEach(item => {
+                    const row = document.createElement('tr');
+                    row.className = 'hover:bg-gray-800/50 transition-colors duration-300';
+                    
+                    // 确定状态标签的样式
+                    let statusClass = 'bg-gray-100 text-gray-800';
+                    if (item.status === '运行中') {
+                        statusClass = 'bg-green-100 text-green-800 border border-green-200';
+                    } else if (item.status === '维护中') {
+                        statusClass = 'bg-yellow-100 text-yellow-800 border border-yellow-200';
+                    } else if (item.status === '故障') {
+                        statusClass = 'bg-red-100 text-red-800 border border-red-200';
+                    } else if (item.status === '停用') {
+                        statusClass = 'bg-gray-100 text-gray-800 border border-gray-200';
+                    }
+                    
+                    row.innerHTML = `
+                            <td class="px-4 py-3 whitespace-nowrap text-sm font-medium text-black text-center align-middle">${item.name}</td>
+                            <td class="px-4 py-3 whitespace-nowrap text-sm text-black text-center align-middle">${item.model}</td>
+                            <td class="px-4 py-3 whitespace-nowrap text-sm text-black text-center align-middle">${item.working_life || '0'}</td>
+                            <td class="px-4 py-3 whitespace-nowrap text-sm text-black text-center align-middle">${item.maintenance_cycle}</td>
+                            <td class="px-4 py-3 whitespace-nowrap text-sm text-black text-center align-middle">${item.used_months.toFixed(1)}</td>
+                            <td class="px-4 py-3 whitespace-nowrap text-sm text-black text-center align-middle">${item.remaining_life.toFixed(1)}</td>
+                            <td class="px-4 py-3 whitespace-nowrap text-sm text-black text-center align-middle">${item.next_maintenance || '无'}</td>
+                            <td class="px-4 py-3 whitespace-nowrap text-sm text-center align-middle">
+                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${statusClass}">${item.status}</span>
+                            </td>
+                        `;
+                    container.appendChild(row);
+                });
+
+                // 渲染分页控件
+                renderPagination();
+            }
+
+            function renderPagination() {
+                // 检查是否已存在分页容器，如果存在则移除
+                let paginationContainer = document.getElementById('pagination-container');
+                if (paginationContainer) {
+                    paginationContainer.remove();
+                }
+
+                // 创建新的分页容器
+                paginationContainer = document.createElement('div');
+                paginationContainer.id = 'pagination-container';
+                paginationContainer.className = 'flex justify-end mt-6';
+
+                const paginationWrapper = document.createElement('div');
+                paginationWrapper.className = 'flex items-center space-x-1';
+
+                // 只显示部分页码，避免页码过多
+                const maxVisiblePages = 5;
+                let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+                let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+
+                // 调整起始页码，确保显示足够的页码
+                if (endPage - startPage + 1 < maxVisiblePages) {
+                    startPage = Math.max(1, endPage - maxVisiblePages + 1);
+                }
+
+                // 上一页按钮
+                if (currentPage > 1) {
+                    const prevButton = document.createElement('button');
+                    prevButton.className = 'px-3 py-1 rounded-md border border-gray-300 text-sm font-medium text-gray-700 hover:bg-gray-50';
+                    prevButton.textContent = '上一页';
+                    prevButton.addEventListener('click', () => renderTable(currentPage - 1));
+                    paginationWrapper.appendChild(prevButton);
+                }
+
+                // 第一页按钮（如果当前不在第一页附近）
+                if (startPage > 1) {
+                    const firstPageButton = document.createElement('button');
+                    firstPageButton.className = 'px-3 py-1 rounded-md border border-gray-300 text-sm font-medium text-gray-700 hover:bg-gray-50';
+                    firstPageButton.textContent = '1';
+                    firstPageButton.addEventListener('click', () => renderTable(1));
+                    paginationWrapper.appendChild(firstPageButton);
+
+                    if (startPage > 2) {
+                        const ellipsis = document.createElement('span');
+                        ellipsis.className = 'px-3 py-1 text-sm text-gray-500';
+                        ellipsis.textContent = '...';
+                        paginationWrapper.appendChild(ellipsis);
+                    }
+                }
+
+                // 中间页码按钮
+                for (let i = startPage; i <= endPage; i++) {
+                    const pageButton = document.createElement('button');
+                    if (i === currentPage) {
+                        pageButton.className = 'px-3 py-1 rounded-md border border-blue-500 bg-blue-50 text-sm font-medium text-blue-700';
+                    } else {
+                        pageButton.className = 'px-3 py-1 rounded-md border border-gray-300 text-sm font-medium text-gray-700 hover:bg-gray-50';
+                    }
+                    pageButton.textContent = i;
+                    pageButton.addEventListener('click', () => renderTable(i));
+                    paginationWrapper.appendChild(pageButton);
+                }
+
+                // 最后一页按钮（如果当前不在最后一页附近）
+                if (endPage < totalPages) {
+                    if (endPage < totalPages - 1) {
+                        const ellipsis = document.createElement('span');
+                        ellipsis.className = 'px-3 py-1 text-sm text-gray-500';
+                        ellipsis.textContent = '...';
+                        paginationWrapper.appendChild(ellipsis);
+                    }
+
+                    const lastPageButton = document.createElement('button');
+                    lastPageButton.className = 'px-3 py-1 rounded-md border border-gray-300 text-sm font-medium text-gray-700 hover:bg-gray-50';
+                    lastPageButton.textContent = totalPages;
+                    lastPageButton.addEventListener('click', () => renderTable(totalPages));
+                    paginationWrapper.appendChild(lastPageButton);
+                }
+
+                // 下一页按钮
+                if (currentPage < totalPages) {
+                    const nextButton = document.createElement('button');
+                    nextButton.className = 'px-3 py-1 rounded-md border border-gray-300 text-sm font-medium text-gray-700 hover:bg-gray-50';
+                    nextButton.textContent = '下一页';
+                    nextButton.addEventListener('click', () => renderTable(currentPage + 1));
+                    paginationWrapper.appendChild(nextButton);
+                }
+
+                paginationContainer.appendChild(paginationWrapper);
+
+                // 在表格下方添加分页控件
+                const tableContainer = document.querySelector('#equipment-details').closest('.overflow-x-auto');
+                tableContainer.parentNode.insertBefore(paginationContainer, tableContainer.nextSibling);
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>维护统计分析</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="/static/font-awesome.min.css" rel="stylesheet">
+    <script src="/static/chart.umd.min.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#165DFF',
+                        secondary: '#0FC6C2',
+                        success: '#00B42A',
+                        warning: '#FF7D00',
+                        danger: '#F53F3F',
+                        info: '#86909C',
+                        light: '#F2F3F5',
+                        dark: '#1D2129',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .card-shadow {
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            }
+            .nav-active {
+                background-color: rgba(22, 93, 255, 0.1);
+                color: #165DFF;
+                border-left-width: 4px;
+                border-left-color: #165DFF;
+            }
+            .nav-item {
+                display: flex;
+                align-items: center;
+                padding-left: 1rem;
+                padding-right: 1rem;
+                padding-top: 0.75rem;
+                padding-bottom: 0.75rem;
+                color: rgb(75 85 99);
+                transition-property: all;
+                transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+                transition-duration: 200ms;
+            }
+            .nav-item:hover {
+                background-color: rgba(22, 93, 255, 0.05);
+            }
+            }
+            </style>
+</head>
+<body class="bg-gray-50 flex flex-col min-h-screen">
+    <!-- 顶部导航栏 -->
+    {% include 'navbar.html' %}
+
+    <div class="flex flex-1 overflow-hidden">
+        
+
+        <!-- 主内容区 -->
+        <div class="flex-1 overflow-y-auto p-4 md:p-6 bg-gray-50">
+            <div class="mb-6 flex flex-col md:flex-row md:items-center md:justify-between">
+                <h1 class="text-2xl font-bold text-gray-800 mb-4 md:mb-0">维护统计分析</h1>
+                <div class="flex space-x-3">
+                    <div id="datePickerContainer" class="relative">
+                        <button id="datePickerBtn" class="bg-white border border-gray-300 rounded-md px-4 py-2 text-gray-700 hover:bg-gray-50 transition-colors duration-200 flex items-center">
+                            <i class="fa fa-calendar mr-2"></i>选择日期
+                        </button>
+                        <div id="datePicker" class="hidden absolute right-0 mt-2 bg-white border border-gray-300 rounded-md shadow-lg p-4 z-10 min-w-[300px]">
+                            <div class="flex justify-between mb-3">
+                                <button id="todayBtn" class="text-sm text-primary hover:underline">今天</button>
+                                <button id="resetBtn" class="text-sm text-gray-500 hover:underline">重置</button>
+                            </div>
+                            <div class="grid grid-cols-7 gap-1 text-center mb-3">
+                                <div class="text-xs text-gray-500 py-1">一</div>
+                                <div class="text-xs text-gray-500 py-1">二</div>
+                                <div class="text-xs text-gray-500 py-1">三</div>
+                                <div class="text-xs text-gray-500 py-1">四</div>
+                                <div class="text-xs text-gray-500 py-1">五</div>
+                                <div class="text-xs text-gray-500 py-1">六</div>
+                                <div class="text-xs text-gray-500 py-1">日</div>
+                            </div>
+                            <div class="grid grid-cols-7 gap-1 mb-3" id="dateGrid">
+                                <!-- 日期会通过JavaScript动态生成 -->
+                            </div>
+                            <div class="flex justify-between items-center text-sm text-gray-600">
+                                <button id="prevMonth" class="hover:text-primary" title="上一个月"><i class="fa fa-chevron-left"></i></button>
+                                <span id="currentMonthYear" class="font-medium"></span>
+                                <button id="nextMonth" class="hover:text-primary" title="下一个月"><i class="fa fa-chevron-right"></i></button>
+                            </div>
+                            <div class="mt-3">
+                                <button id="applyDateBtn" class="w-full bg-primary text-white rounded-md py-2 hover:bg-primary/90 transition-colors duration-200">
+                                    应用选择
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 统计卡片 -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                <div class="bg-white rounded-lg p-6 card-shadow">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-gray-500 font-medium">总维护次数</h3>
+                        <span class="bg-primary/10 text-primary p-2 rounded-full"><i class="fa fa-wrench"></i></span>
+                    </div>
+                    <p class="text-3xl font-bold text-gray-800">{{ total_maintenances }}</p>
+                    <p class="text-gray-500 mt-2"><i class="fa fa-arrow-up text-success"></i> 较上月增长 {{ growth_rate_total }}%</p>
+                </div>
+                <div class="bg-white rounded-lg p-6 card-shadow">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-gray-500 font-medium">预防性维护</h3>
+                        <span class="bg-success/10 text-success p-2 rounded-full"><i class="fa fa-shield"></i></span>
+                    </div>
+                    <p class="text-3xl font-bold text-gray-800">{{ maintenance_by_type|selectattr('maintenance_type', 'equalto', '预防性维护')|map(attribute='count')|first or 0 }}</p>
+                    <p class="text-gray-500 mt-2"><i class="fa fa-arrow-up text-success"></i> 较上月增长 {{ growth_rate_preventive }}%</p>
+                </div>
+                <div class="bg-white rounded-lg p-6 card-shadow">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-gray-500 font-medium">故障维修</h3>
+                        <span class="bg-danger/10 text-danger p-2 rounded-full"><i class="fa fa-wrench"></i></span>
+                    </div>
+                    <p class="text-3xl font-bold text-gray-800">{{ maintenance_by_type|selectattr('maintenance_type', 'equalto', '故障维修')|map(attribute='count')|first or 0 }}</p>
+                    <p class="text-gray-500 mt-2"><i class="fa fa-arrow-down text-danger"></i> 较上月下降 {{ decline_rate_fault }}%</p>
+                </div>
+                <div class="bg-white rounded-lg p-6 card-shadow">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-gray-500 font-medium">平均维护时长</h3>
+                        <span class="bg-warning/10 text-warning p-2 rounded-full"><i class="fa fa-clock-o"></i></span>
+                    </div>
+                    <p class="text-3xl font-bold text-gray-800">{{ avg_maintenance_time }} 小时</p>
+                    <p class="text-gray-500 mt-2"><i class="fa fa-arrow-down text-success"></i> 较上月缩短 {{ time_reduction }} 小时</p>
+                </div>
+            </div>
+
+            <!-- 图表区域 -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                <div class="bg-white rounded-lg p-6 card-shadow">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-4">设备维护分布</h3>
+                    <div class="h-64">
+                        <canvas id="equipmentChart"></canvas>
+                    </div>
+                </div>
+                <div class="bg-white rounded-lg p-6 card-shadow">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-4">维护类型统计</h3>
+                    <div class="h-64">
+                        <canvas id="typeChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 维护趋势图表 -->
+            <div class="bg-white rounded-lg p-6 card-shadow mb-6">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4">维护趋势分析</h3>
+                <div class="h-80">
+                    <canvas id="trendChart"></canvas>
+                </div>
+            </div>
+
+            <!-- 维护详情表格 -->
+            <div class="bg-white rounded-lg p-6 card-shadow">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4">维护详情</h3>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">设备名称</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">维护类型</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">维护日期</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">维护人员</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">状态</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            {% if maintenance_by_equipment %}
+                                {% for maintenance in maintenance_details %}
+                                    <tr>
+                                        <td class="px-6 py-4 whitespace-nowrap">{{ maintenance.equipment }}</td>
+                                        <td class="px-6 py-4 whitespace-nowrap"><span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-primary/10 text-primary">{{ maintenance.type }}</span></td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ maintenance.date }}</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ maintenance.person }}</td>
+                                        <td class="px-6 py-4 whitespace-nowrap"><span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-success/10 text-success">已完成</span></td>
+                                    </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr>
+                                    <td colspan="5" class="px-6 py-4 text-center text-sm text-gray-500">暂无维护数据</td>
+                                </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 初始化图表和日期选择器
+        document.addEventListener('DOMContentLoaded', function() {
+            // 日期选择器功能实现
+            const datePickerBtn = document.getElementById('datePickerBtn');
+            const datePicker = document.getElementById('datePicker');
+            const dateGrid = document.getElementById('dateGrid');
+            const currentMonthYear = document.getElementById('currentMonthYear');
+            const prevMonthBtn = document.getElementById('prevMonth');
+            const nextMonthBtn = document.getElementById('nextMonth');
+            const todayBtn = document.getElementById('todayBtn');
+            const resetBtn = document.getElementById('resetBtn');
+            const applyDateBtn = document.getElementById('applyDateBtn');
+            const datePickerContainer = document.getElementById('datePickerContainer');
+
+            let currentDate = new Date();
+            let selectedDate = null;
+
+            // 切换日期选择器显示/隐藏
+            if (datePickerBtn) {
+                datePickerBtn.addEventListener('click', function(event) {
+                    event.stopPropagation();
+                    datePicker.classList.toggle('hidden');
+                    if (!datePicker.classList.contains('hidden')) {
+                        generateCalendar(currentDate.getFullYear(), currentDate.getMonth());
+                    }
+                });
+            }
+
+            // 点击页面其他地方关闭日期选择器
+            document.addEventListener('click', function(event) {
+                if (!datePickerContainer.contains(event.target)) {
+                    datePicker.classList.add('hidden');
+                }
+            });
+
+            // 阻止日期选择器内部点击事件冒泡
+            datePicker.addEventListener('click', function(event) {
+                event.stopPropagation();
+            });
+
+            // 生成日历
+            function generateCalendar(year, month) {
+                dateGrid.innerHTML = '';
+                currentMonthYear.textContent = `${year}年${month + 1}月`;
+
+                // 获取当月第一天
+                const firstDay = new Date(year, month, 1);
+                // 获取当月最后一天
+                const lastDay = new Date(year, month + 1, 0);
+                // 获取当月第一天是星期几 (0-6, 0是星期日)
+                const firstDayIndex = firstDay.getDay() === 0 ? 6 : firstDay.getDay() - 1;
+                // 获取当月天数
+                const daysInMonth = lastDay.getDate();
+
+                // 添加上个月的日期占位
+                for (let i = 0; i < firstDayIndex; i++) {
+                    const emptyDay = document.createElement('div');
+                    emptyDay.classList.add('text-center', 'py-1', 'text-gray-200');
+                    dateGrid.appendChild(emptyDay);
+                }
+
+                // 添加当月日期
+                for (let day = 1; day <= daysInMonth; day++) {
+                    const dateElement = document.createElement('button');
+                    dateElement.textContent = day;
+                    dateElement.classList.add('w-full', 'text-center', 'py-1', 'rounded', 'hover:bg-gray-100', 'transition-colors', 'duration-200');
+                     
+                    const currentDateObj = new Date(year, month, day);
+                    const dateString = formatDate(currentDateObj);
+                     
+                    // 设置当前日期样式
+                    const today = new Date();
+                    if (year === today.getFullYear() && month === today.getMonth() && day === today.getDate()) {
+                        dateElement.classList.add('font-bold', 'border', 'border-primary');
+                    }
+                     
+                    // 设置选中日期样式
+                    if (selectedDate && dateString === formatDate(selectedDate)) {
+                        dateElement.classList.add('bg-primary', 'text-white');
+                    }
+                     
+                    // 添加点击事件
+                    dateElement.addEventListener('click', function() {
+                        selectedDate = new Date(year, month, day);
+                        generateCalendar(year, month);
+                        datePickerBtn.innerHTML = `<i class="fa fa-calendar mr-2"></i>${formatDate(selectedDate)}`;
+                    });
+                     
+                    dateGrid.appendChild(dateElement);
+                }
+            }
+
+            // 格式化日期
+            function formatDate(date) {
+                const year = date.getFullYear();
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const day = String(date.getDate()).padStart(2, '0');
+                return `${year}-${month}-${day}`;
+            }
+
+            // 上个月
+            if (prevMonthBtn) {
+                prevMonthBtn.addEventListener('click', function(event) {
+                    event.stopPropagation();
+                    currentDate.setMonth(currentDate.getMonth() - 1);
+                    generateCalendar(currentDate.getFullYear(), currentDate.getMonth());
+                });
+            }
+
+            // 下个月
+            if (nextMonthBtn) {
+                nextMonthBtn.addEventListener('click', function(event) {
+                    event.stopPropagation();
+                    currentDate.setMonth(currentDate.getMonth() + 1);
+                    generateCalendar(currentDate.getFullYear(), currentDate.getMonth());
+                });
+            }
+
+            // 今天按钮
+            if (todayBtn) {
+                todayBtn.addEventListener('click', function() {
+                    currentDate = new Date();
+                    selectedDate = new Date();
+                    generateCalendar(currentDate.getFullYear(), currentDate.getMonth());
+                    datePickerBtn.innerHTML = `<i class="fa fa-calendar mr-2"></i>${formatDate(currentDate)}`;
+                });
+            }
+
+            // 重置按钮
+            if (resetBtn) {
+                resetBtn.addEventListener('click', function() {
+                    selectedDate = null;
+                    datePickerBtn.innerHTML = '<i class="fa fa-calendar mr-2"></i>选择日期';
+                    generateCalendar(currentDate.getFullYear(), currentDate.getMonth());
+                });
+            }
+
+            // 应用选择按钮
+            if (applyDateBtn) {
+                applyDateBtn.addEventListener('click', function() {
+                    if (selectedDate) {
+                        const url = new URL(window.location);
+                        url.searchParams.set('date', formatDate(selectedDate));
+                        window.location.href = url.toString();
+                    }
+                    datePicker.classList.add('hidden');
+                });
+            }
+            // 检查Chart是否已加载
+            if (typeof Chart === 'undefined') {
+                console.error('Chart.js is not loaded');
+                return;
+            }
+            // 设备维护分布图
+            const equipmentCtx = document.getElementById('equipmentChart').getContext('2d');
+            const equipmentData = {
+                labels: {{ maintenance_by_equipment | map(attribute='name') | list | tojson }},
+                datasets: [{
+                    label: '维护次数',
+                    data: {{ maintenance_by_equipment | map(attribute='count') | list | tojson }},
+                    backgroundColor: [
+                        '#165DFF', '#0FC6C2', '#00B42A', '#FF7D00', '#F53F3F', '#86909C', '#722ED1'
+                    ],
+                    borderWidth: 0
+                }]
+            };
+            const equipmentChart = new Chart(equipmentCtx, {
+                type: 'doughnut',
+                data: equipmentData,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'right'
+                        }
+                    }
+                }
+            });
+
+            // 如果没有数据，显示提示信息
+            if (equipmentData.labels.length === 0) {
+                const equipmentChartContainer = document.getElementById('equipmentChart').parentElement;
+                equipmentChartContainer.innerHTML = '<div class="flex items-center justify-center h-full text-gray-500">暂无设备维护数据</div>';
+            }
+
+            // 维护类型统计图
+            const typeCtx = document.getElementById('typeChart').getContext('2d');
+            const typeData = {
+                labels: {{ maintenance_by_type | map(attribute='maintenance_type') | list | tojson }},
+                datasets: [{
+                    label: '维护次数',
+                    data: {{ maintenance_by_type | map(attribute='count') | list | tojson }},
+                    backgroundColor: [
+                        '#165DFF', '#0FC6C2', '#00B42A', '#FF7D00', '#F53F3F'
+                    ],
+                    borderWidth: 0
+                }]
+            };
+            const typeChart = new Chart(typeCtx, {
+                type: 'pie',
+                data: typeData,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'right'
+                        }
+                    }
+                }
+            });
+
+            // 如果没有数据，显示提示信息
+            if (typeData.labels.length === 0) {
+                const typeChartContainer = document.getElementById('typeChart').parentElement;
+                typeChartContainer.innerHTML = '<div class="flex items-center justify-center h-full text-gray-500">暂无维护类型数据</div>';
+            }
+
+            // 维护趋势分析图
+            const trendCtx = document.getElementById('trendChart').getContext('2d');
+            const trendData = {
+                labels: {{ trend_labels | tojson }},
+                datasets: [{
+                    label: '预防性维护',
+                    data: {{ preventive_maintenance_data | tojson }},
+                    borderColor: '#00B42A',
+                    backgroundColor: 'rgba(0, 180, 42, 0.1)',
+                    fill: true,
+                    tension: 0.4
+                }, {
+                    label: '故障维修',
+                    data: {{ fault_maintenance_data | tojson }},
+                    borderColor: '#F53F3F',
+                    backgroundColor: 'rgba(245, 63, 63, 0.1)',
+                    fill: true,
+                    tension: 0.4
+                }]
+            };
+            const trendChart = new Chart(trendCtx, {
+                type: 'line',
+                data: trendData,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+
+            // 如果没有数据，显示提示信息
+            if (trendData.labels.length === 0) {
+                const trendChartContainer = document.getElementById('trendChart').parentElement;
+                trendChartContainer.innerHTML = '<div class="flex items-center justify-center h-full text-gray-500">暂无维护趋势数据</div>';
+            }
+        });
+    </script>
+</body>
+</html>

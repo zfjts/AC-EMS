@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>自控设备全生命周期管理平台</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="/static/chart.umd.min.js"></script>
+    <script type="text/javascript">
+        // 从服务器获取的初始化数据
+        // 以下变量由服务器端渲染提供
+        // 使用JSON.parse包装模板变量以消除编辑器报警
+        window.totalEquipment = JSON.parse('{{ total_equipment | safe }}');
+        window.monthlyMaintenance = JSON.parse('{{ monthly_maintenance | safe }}');
+        window.pendingMaintenance = JSON.parse('{{ pending_maintenance | safe }}');
+        window.totalDocuments = JSON.parse('{{ total_documents | safe }}');
+        window.totalFaultReports = JSON.parse('{{ total_fault_reports | safe }}');
+        window.statusDistribution = JSON.parse('{{ status_distribution | safe }}');
+        window.maintenanceHistory = JSON.parse('{{ maintenance_history | safe }}');
+    </script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#165DFF',
+                        secondary: '#4080FF',
+                        accent: '#69b1ff',
+                        neon: '#36CFFB',
+                        dark: '#F2F3F5',
+                        textPrimary: '#1D2129',
+                        textSecondary: '#4E5969',
+                        textTertiary: '#86909C',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .bg-gradient-tech {
+                background: linear-gradient(135deg, #E8F3FF 0%, #F0F7FF 100%);
+            }
+            .text-shadow-neon {
+                text-shadow: 0 0 8px rgba(54, 207, 251, 0.5);
+            }
+            .border-glow {
+                box-shadow: 0 0 5px rgba(54, 207, 251, 0.7);
+            }
+            .card-hover {
+                transition: all 300ms ease;
+                will-change: transform;
+            }
+            .card-hover:hover {
+                box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.03), 0 0 10px rgba(54, 207, 251, 0.2);
+                transform: translateY(-1px);
+            }
+        }
+    </style>
+</head>
+<body class="bg-dark text-black min-h-screen font-sans flex flex-col">
+    <header class="bg-gradient-to-r from-blue-600 to-blue-800 py-6 shadow-md">
+        <div class="container mx-auto px-4">
+            <h1 class="text-3xl font-bold text-center text-white">
+                自控设备全生命周期管理平台
+            </h1>
+        </div>
+    </header>
+
+    {% include 'navbar.html' %}
+
+    <script>
+        // 移动端菜单切换
+            document.getElementById('mobile-menu-btn').addEventListener('click', function() {
+                const mobileMenu = document.getElementById('mobile-menu');
+                mobileMenu.classList.toggle('hidden');
+            });
+        </script>
+
+        <script>
+            // 更新统计卡片数据
+            document.addEventListener('DOMContentLoaded', function() {
+                // 更新设备总数
+                document.getElementById('total-equipment').textContent = window.totalEquipment || '--';
+                // 更新本月维护
+                document.getElementById('monthly-maintenance').textContent = window.monthlyMaintenance || '--';
+                // 更新待维护设备
+                document.getElementById('pending-maintenance').textContent = window.pendingMaintenance || '--';
+                // 更新文档数量
+                document.getElementById('total-documents').textContent = window.totalDocuments || '--';
+                // 更新故障报告
+                document.getElementById('total-fault-reports').textContent = window.totalFaultReports || '--';
+                document.getElementById('fault-reports-change').textContent = `共提交 ${window.totalFaultReports || 0} 份故障报告`;
+            });
+        </script>
+
+    <main class="flex-grow container mx-auto px-4 py-8">
+               <!-- 统计卡片 -->
+        <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 mb-12">
+            <div class="bg-white rounded-xl p-6 shadow-sm card-hover border border-gray-100">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-semibold text-black">设备总数</h3>
+                    <i class="fa fa-cubes text-2xl text-primary"></i>
+                </div>
+                <p class="text-3xl font-bold text-black" id="total-equipment">--</p>
+                <p class="text-black mt-2" id="equipment-growth"></p>
+            </div>
+            <div class="bg-white rounded-xl p-6 shadow-sm card-hover border border-gray-100">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-semibold text-black">本月维护</h3>
+                    <i class="fa fa-wrench text-2xl text-secondary"></i>
+                </div>
+                <p class="text-3xl font-bold text-black" id="monthly-maintenance">--</p>
+                <p class="text-black mt-2" id="maintenance-change"></p>
+            </div>
+            <div class="bg-white rounded-xl p-6 shadow-sm card-hover border border-gray-100">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-semibold text-black">待维护设备</h3>
+                    <i class="fa fa-bell text-2xl text-accent"></i>
+                </div>
+                <p class="text-3xl font-bold text-black" id="pending-maintenance">--</p>
+                <p class="text-black/70 mt-2"><i class="fa fa-arrow-up text-black"></i> 需尽快处理</p>
+            </div>
+            <div class="bg-white rounded-xl p-6 shadow-sm card-hover border border-gray-100">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-semibold text-black">文档数量</h3>
+                    <i class="fa fa-file-text text-2xl text-neon"></i>
+                </div>
+                <p class="text-3xl font-bold text-black" id="total-documents">--</p>
+                <p class="text-black mt-2" id="documents-growth"></p>
+            </div>
+            <div class="bg-white rounded-xl p-6 shadow-sm card-hover border border-gray-100">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-semibold text-black">故障报告</h3>
+                    <i class="fa fa-exclamation-triangle text-2xl text-yellow-500"></i>
+                </div>
+                <p class="text-3xl font-bold text-black" id="total-fault-reports">--</p>
+                <p class="text-black mt-2" id="fault-reports-change"></p>
+            </div>
+        </section>
+
+        <!-- 图表区域 -->
+        <section class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
+            <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+                <h3 class="text-xl font-semibold mb-6 text-black">设备状态分布</h3>
+                <div class="h-80">
+                    <canvas id="equipmentStatusChart"></canvas>
+                </div>
+            </div>
+            <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+                <h3 class="text-xl font-semibold mb-6 text-black">近6个月维护记录</h3>
+                <div class="h-80">
+                    <canvas id="maintenanceChart"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <!-- 功能卡片 -->
+        <section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-16">
+            <div class="bg-white rounded-xl p-6 shadow-md card-hover border border-blue-100 flex flex-col h-full transform transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
+                <div class="bg-blue-500/10 w-14 h-14 rounded-full flex items-center justify-center mb-4">
+                    <i class="fa fa-cube text-blue-600 text-xl"></i>
+                </div>
+                <h3 class="text-xl font-semibold mb-3 text-gray-800">设备管理</h3>
+                <p class="text-gray-600 mb-4 flex-grow">
+                    全面记录和管理所有自控设备的基本信息，包括型号、制造商、安装位置等。
+                </p>
+                <a href="/equipment/" class="text-blue-600 hover:text-blue-800 font-medium flex items-center gap-1 transition-colors duration-300">
+                    查看详情 <i class="fa fa-arrow-right text-sm"></i>
+                </a>
+            </div>
+            <div class="bg-white rounded-xl p-6 shadow-md card-hover border border-blue-100 flex flex-col h-full transform transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
+                <div class="bg-green-500/10 w-14 h-14 rounded-full flex items-center justify-center mb-4">
+                    <i class="fa fa-wrench text-green-600 text-xl"></i>
+                </div>
+                <h3 class="text-xl font-semibold mb-3 text-gray-800">维护跟踪</h3>
+                <p class="text-gray-600 mb-4 flex-grow">
+                    记录每台设备的维护历史，包括维护类型、维护时间等。
+                </p>
+                <a href="/maintenance/reminders/" class="text-green-600 hover:text-green-800 font-medium flex items-center gap-1 transition-colors duration-300">
+                    查看详情 <i class="fa fa-arrow-right text-sm"></i>
+                </a>
+            </div>
+            <div class="bg-white rounded-xl p-6 shadow-md card-hover border border-blue-100 flex flex-col h-full transform transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
+                <div class="bg-purple-500/10 w-14 h-14 rounded-full flex items-center justify-center mb-4">
+                    <i class="fa fa-line-chart text-purple-600 text-xl"></i>
+                </div>
+                <h3 class="text-xl font-semibold mb-3 text-gray-800">生命周期分析</h3>
+                <p class="text-gray-600 mb-4 flex-grow">
+                    分析设备全生命周期数据，优化使用效率和维护策略。
+                </p>
+                <a href="/monitoring/" class="text-purple-600 hover:text-purple-800 font-medium flex items-center gap-1 transition-colors duration-300">
+                    查看详情 <i class="fa fa-arrow-right text-sm"></i>
+                </a>
+            </div>
+            <div class="bg-white rounded-xl p-6 shadow-md card-hover border border-blue-100 flex flex-col h-full transform transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
+                <div class="bg-amber-500/10 w-14 h-14 rounded-full flex items-center justify-center mb-4">
+                    <i class="fa fa-file-alt text-amber-700 text-2xl"></i>
+                </div>
+                <h3 class="text-xl font-semibold mb-3 text-gray-800">文档管理</h3>
+                <p class="text-gray-600 mb-4 flex-grow">
+                    集中管理设备说明书、技术规范、维护手册等文档资料，方便快速查询和访问。
+                </p>
+                <a href="/documents/" class="text-amber-600 hover:text-amber-800 font-medium flex items-center gap-1 transition-colors duration-300">
+                    查看详情 <i class="fa fa-arrow-right text-sm"></i>
+                </a>
+            </div>
+        </section>
+
+        <!-- 维护提醒 -->
+        <section class="bg-white rounded-xl p-6 shadow-sm border border-gray-100 mb-12">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-xl font-semibold text-black">近期维护提醒</h3>
+                <a href="/maintenance/reminders/" class="text-black hover:text-black/80 font-medium transition-colors duration-300">
+                    查看全部 <i class="fa fa-chevron-right text-sm"></i>
+                </a>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-700">
+                    <thead>
+                        <tr>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">设备名称</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">型号</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">下次维护日期</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">剩余天数</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">状态</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-700" id="maintenance-reminders">
+                        <!-- 数据将通过JavaScript动态加载 -->
+                        <tr class="animate-pulse">
+                            <td colspan="6" class="px-4 py-8 text-center text-black">加载中...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+                       // 初始化数据变量，设置默认值
+            const totalEquipment = window.totalEquipment || 0;
+            const monthlyMaintenance = window.monthlyMaintenance || 0;
+            const pendingMaintenance = window.pendingMaintenance || 0;
+            const totalDocuments = window.totalDocuments || 0;
+            const totalFaultReports = window.totalFaultReports || 0;
+            const statusDistribution = window.statusDistribution || {};
+            const maintenanceHistory = window.maintenanceHistory || [];
+
+            // 更新统计卡片
+            document.getElementById('total-equipment').textContent = totalEquipment;
+            document.getElementById('equipment-growth').innerHTML = `共有 ${totalEquipment} 台设备`;
+
+            document.getElementById('monthly-maintenance').textContent = monthlyMaintenance;
+            document.getElementById('maintenance-change').innerHTML = `本月已完成 ${monthlyMaintenance} 次维护`;
+
+            document.getElementById('pending-maintenance').textContent = pendingMaintenance;
+
+            document.getElementById('total-documents').textContent = totalDocuments;
+            document.getElementById('documents-growth').innerHTML = `已有 ${totalDocuments} 份文档`;
+
+            document.getElementById('total-fault-reports').textContent = totalFaultReports;
+            document.getElementById('fault-reports-change').innerHTML = `共提交 ${totalFaultReports} 份故障报告`;
+
+            // 设备状态分布图表
+            const statusCtx = document.getElementById('equipmentStatusChart').getContext('2d');
+            const statusChart = new Chart(statusCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(statusDistribution),
+                    datasets: [{
+                        data: Object.values(statusDistribution),
+                        backgroundColor: [
+                            '#3b82f6', // 运行中 - 蓝色
+                            '#f59e0b', // 即将过期 - 黄色
+                            '#ef4444', // 已过期 - 红色
+                            '#6b7280', // 停用 - 灰色
+                            '#ec4899'  // 未安装 - 粉色
+                        ],
+                        borderColor: '#0f172a',
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                            labels: {
+                                color: '#000000',
+                            }
+                        }
+                    }
+                }
+            });
+
+            // 近6个月维护记录图表
+            const maintenanceCtx = document.getElementById('maintenanceChart').getContext('2d');
+            const maintenanceChart = new Chart(maintenanceCtx, {
+                type: 'bar',
+                data: {
+                    labels: maintenanceHistory.map(item => item.month),
+                    datasets: [{
+                        label: '维护次数',
+                        data: maintenanceHistory.map(item => item.count),
+                        backgroundColor: '#3b82f6',
+                        borderColor: '#1e40af',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        color: '#000000'
+                    },
+                    grid: {
+                        color: 'rgba(0, 0, 0, 0.05)'
+                    }
+                },
+                x: {
+                    ticks: {
+                        color: '#000000',
+                        font: {
+                            size: 12
+                        }
+                    },
+                    grid: {
+                        color: 'rgba(0, 0, 0, 0.05)'
+                    }
+                }
+            }
+                }
+            });
+
+            // 模拟维护提醒数据
+            setTimeout(() => {
+                const remindersContainer = document.getElementById('maintenance-reminders');
+                remindersContainer.innerHTML = '';
+
+                const reminders = []; // 数据已清除
+
+                reminders.forEach(item => {
+                    const row = document.createElement('tr');
+                    row.className = 'hover:bg-gray-800/50 transition-colors duration-300';
+                    row.innerHTML = `
+                        <td class="px-4 py-3 whitespace-nowrap text-sm font-medium text-black">${item.name}</td>
+                        <td class="px-4 py-3 whitespace-nowrap text-sm text-black">${item.model}</td>
+                        <td class="px-4 py-3 whitespace-nowrap text-sm text-black">${item.date}</td>
+                        <td class="px-4 py-3 whitespace-nowrap text-sm text-black">${item.days}</td>
+                        <td class="px-4 py-3 whitespace-nowrap text-sm">
+                            <span class="px-2 py-1 text-xs rounded-full ${item.statusClass} text-black">${item.status}</span>
+                        </td>
+                        <td class="px-4 py-3 whitespace-nowrap text-sm text-black">
+                            <a href="#" class="text-black hover:text-black mr-3"><i class="fa fa-wrench"></i></a>
+                            <a href="#" class="text-black hover:text-black"><i class="fa fa-eye"></i></a>
+                        </td>
+                    `;
+                    remindersContainer.appendChild(row);
+                });
+            }, 1200);
+        });
+    </script>
+</body>
+</html>
+    <footer class="bg-white text-textSecondary py-8 mt-12 border-t border-gray-100">
+        <div class="container mx-auto px-4 text-center">
+            <p>自控设备全生命周期管理平台 &copy; 2025</p>
+        </div>
+    </footer>
+</body>
+</html>

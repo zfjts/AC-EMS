@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ equipment.name }} - 参数信息</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#165DFF',
+                        secondary: '#4080FF',
+                        accent: '#165DFF',
+                        neon: '#4080FF',
+                        dark: '#F2F3F5',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .bg-gradient-tech {
+                background: linear-gradient(135deg, #F2F3F5 0%, #E5E6EB 100%);
+            }
+            .text-shadow-neon {
+                text-shadow: 0 0 8px rgba(64, 128, 255, 0.5);
+            }
+            .border-glow {
+                box-shadow: 0 0 5px rgba(64, 128, 255, 0.7);
+            }
+        }
+    </style>
+</head>
+<body class="bg-dark text-gray-800 min-h-screen font-sans">
+    <header class="bg-primary text-white border-b border-neon/30 shadow-lg">
+        <div class="container mx-auto px-4 py-6">
+            <h1 class="text-3xl font-bold text-center">自控设备全生命周期管理平台</h1>
+        </div>
+    </header>
+
+    <nav class="bg-white border-b border-gray-200 shadow-sm">
+        <div class="container mx-auto px-4">
+            <ul class="flex space-x-6 py-4">
+                <li><a href="/" class="font-medium text-gray-600 hover:text-primary transition-colors duration-300">首页</a></li>
+                <li><a href="/equipment/" class="font-medium text-primary border-b-2 border-primary pb-1 hover:text-primary transition-colors duration-300">设备管理</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <main class="container mx-auto px-4 py-8">
+        <div class="flex justify-between items-center mb-6">
+            <h2 class="text-2xl font-semibold text-shadow-neon">{{ equipment.name }} - 参数信息</h2>
+            <a href="/equipment/" class="bg-white hover:bg-gray-100 text-primary font-medium py-2 px-4 rounded-md transition duration-300 border border-primary/50 hover:border-primary flex items-center"><i class="fas fa-arrow-left mr-2"></i>返回列表</a>
+        </div>
+
+        <!-- 添加参数表单 -->
+        <div class="bg-white rounded-lg shadow-md p-6 border border-gray-200 mb-8">
+            <h3 class="text-xl font-medium text-primary border-b border-gray-200 pb-2 mb-4">添加参数记录</h3>
+            <form action="/equipment/{{ equipment.id }}/parameters/add" method="post" class="space-y-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label for="param_name" class="block text-sm font-medium text-gray-700 mb-1">参数名称</label>
+                        <input type="text" id="param_name" name="param_name" required
+                               class="w-full bg-white border border-gray-300 rounded-md px-4 py-2 text-gray-800 focus:outline-none focus:ring-2 focus:ring-primary/50">
+                    </div>
+                    <div>
+                        <label for="param_value" class="block text-sm font-medium text-gray-700 mb-1">参数值</label>
+                        <input type="text" id="param_value" name="param_value" required
+                               class="w-full bg-white border border-gray-300 rounded-md px-4 py-2 text-gray-800 focus:outline-none focus:ring-2 focus:ring-primary/50">
+                    </div>
+                </div>
+                <button type="submit" class="bg-primary hover:bg-primary/90 text-white font-medium py-2 px-4 rounded-md transition duration-300 border border-primary/50 hover:border-primary">
+                    <i class="fas fa-plus mr-2"></i>添加参数
+                </button>
+            </form>
+        </div>
+
+        <div class="bg-white rounded-lg shadow-md p-6 border border-gray-200">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="space-y-4">
+                    <h3 class="text-xl font-medium text-primary border-b border-gray-200 pb-2">基本参数</h3>
+                    <div class="grid grid-cols-2 gap-4 text-sm">
+                        <div><span class="text-gray-500">设备名称:</span> {{ equipment.name }}</div>
+                        <div><span class="text-gray-500">型号:</span> {{ equipment.model }}</div>
+                        <div><span class="text-gray-500">制造商:</span> {{ equipment.manufacturer }}</div>
+                        <div><span class="text-gray-500">安装位置:</span> {{ equipment.location }}</div>
+                    </div>
+                </div>
+
+                <div class="space-y-4">
+                    <h3 class="text-xl font-medium text-primary border-b border-gray-200 pb-2">技术参数</h3>
+                    <div class="space-y-2 text-sm">
+                        {% if equipment.parameters %}
+                            {% for key, value in equipment.parameters.items() %}
+                                <div class="flex justify-between"><span class="text-gray-500">{{ key }}:</span> <span>{{ value }}</span></div>
+                            {% endfor %}
+                        {% else %}
+                            <p class="text-gray-400 italic">暂无技术参数数据</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-8 space-y-4">
+                <h3 class="text-xl font-medium text-primary border-b border-gray-200 pb-2">参数记录</h3>
+                {% if parameter_records %}
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-700">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">参数名称</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">参数值</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">修改时间</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            {% for record in parameter_records %}
+                            <tr>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-800">{{ record.param_name }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{{ record.param_value }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ record.modified_time }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-gray-400 italic">暂无参数记录</p>
+                {% endif %}
+            </div>
+        </div>
+    </main>
+
+    <footer class="bg-white py-8 mt-12 border-t border-gray-200">
+        <div class="container mx-auto px-4 text-center">
+            <p class="text-gray-600">自控设备全生命周期管理平台 &copy; 2025</p>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>设备详情</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#165DFF',
+                        secondary: '#4080FF',
+                        accent: '#69b1ff',
+                        neon: '#36CFFB',
+                        dark: '#F2F3F5',
+                        textPrimary: '#1D2129',
+                        textSecondary: '#4E5969',
+                        textTertiary: '#86909C',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .bg-gradient-tech {
+                background: linear-gradient(135deg, #E8F3FF 0%, #F0F7FF 100%);
+            }
+            .text-shadow-neon {
+                text-shadow: 0 0 8px rgba(54, 207, 251, 0.5);
+            }
+            .border-glow {
+                box-shadow: 0 0 5px rgba(54, 207, 251, 0.7);
+            }
+            .card-hover {
+                transition: all 300ms ease;
+                will-change: transform;
+            }
+            .card-hover:hover {
+                box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.03), 0 0 10px rgba(54, 207, 251, 0.2);
+                transform: translateY(-1px);
+            }
+        }
+    </style>
+</head>
+<body class="bg-dark text-black min-h-screen font-sans flex flex-col">
+    <header class="bg-gradient-to-r from-blue-600 to-blue-800 py-6 shadow-md">
+        <div class="container mx-auto px-4 py-6">
+            <h1 class="text-3xl font-bold text-center">自控设备全生命周期管理平台</h1>
+        </div>
+    </header>
+
+    <nav class="bg-white shadow-md border-b border-gray-200">
+        <div class="container mx-auto px-4">
+            <ul class="flex space-x-6 py-4">
+                <li><a href="/" class="font-medium text-gray-700 hover:text-primary transition-colors duration-300">首页</a></li>
+                <li><a href="/equipment/" class="font-medium text-gray-700 hover:text-primary transition-colors duration-300">设备管理</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <main class="container mx-auto px-4 py-8">
+        <div class="flex justify-between items-center mb-6">
+            <h2 class="text-2xl font-semibold text-shadow-neon">设备详情</h2>
+            <div class="flex space-x-3">
+                <a href="/maintenance/create/{{ equipment.id }}" class="bg-primary hover:bg-primary/90 text-white font-medium py-2 px-4 rounded-md transition duration-300 flex items-center"><i class="fas fa-tools mr-2"></i>添加维护记录</a>
+                <button onclick="confirmDelete()" class="bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-md transition duration-300 flex items-center"><i class="fas fa-trash mr-2"></i>删除设备</button>
+                <a href="/equipment/" class="bg-gray-100 hover:bg-gray-200 text-gray-800 font-medium py-2 px-4 rounded-md transition duration-300">
+                    返回列表
+                </a>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100 card-hover mb-8">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <h3 class="text-xl font-semibold mb-4 text-gray-800">{{ equipment.name }}</h3>
+                    <p class="text-gray-600 mb-2"><span class="font-medium text-gray-800">型号:</span> {{ equipment.model }}</p>
+                    <p class="text-gray-600 mb-2"><span class="font-medium text-gray-800">生产编号:</span> {{ equipment.production_number if equipment.production_number else '无' }}</p>
+                    <p class="text-gray-600 mb-2"><span class="font-medium text-gray-800">制造商:</span> {{ equipment.manufacturer }}</p>
+                    <p class="text-gray-600 mb-2"><span class="font-medium">安装日期:</span> {{ equipment.installation_date.strftime('%Y-%m-%d') if equipment.installation_date else '未设置' }}</p>
+                </div>
+                <div>
+                    <p class="text-gray-600 mb-2"><span class="font-medium">安装位置:</span> {{ equipment.location }}</p>
+                    <p class="text-gray-600 mb-2"><span class="font-medium">状态:</span>
+                        {% if equipment.status == '运行中' %}
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">{{ equipment.status }}</span>
+                        {% elif equipment.status == '维护中' %}
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">{{ equipment.status }}</span>
+                        {% elif equipment.status == '故障' %}
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">{{ equipment.status }}</span>
+                        {% else %}
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">{{ equipment.status }}</span>
+                        {% endif %}
+                    </p>
+                    <p class="text-gray-600 mb-2"><span class="font-medium">上次维护:</span> {{ equipment.last_maintenance.strftime('%Y-%m-%d') if equipment.last_maintenance else '无' }}</p>
+                    <p class="text-gray-600 mb-2"><span class="font-medium">下次维护:</span> {{ equipment.next_maintenance.strftime('%Y-%m-%d') if equipment.next_maintenance else '无' }}</p>
+                    <p class="text-gray-600 mb-2"><span class="font-medium">工作寿命（月）:</span> {{ equipment.working_life if equipment.working_life else '0' }}</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100 card-hover mb-8">
+            <h3 class="text-xl font-semibold mb-4 text-gray-800">附属文档</h3>
+            {% if equipment.documents %}
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr class="hover:bg-primary/60 transition-colors duration-150">
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">文档名称</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">分类</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">上传日期</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        {% for doc in equipment.documents %}
+                        <tr>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ doc.title }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{{ doc.category }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ doc.upload_date.strftime('%Y-%m-%d') }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                <a href="/documents/{{ doc.id }}" class="text-primary hover:text-blue-700 mr-3"><i class="fas fa-eye"></i> 查看</a>
+                                <a href="/documents/{{ doc.id }}/edit" class="text-yellow-600 hover:text-yellow-800 mr-3"><i class="fas fa-edit"></i> 编辑</a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p class="text-gray-500">暂无关联文档</p>
+            {% endif %}
+        </div>
+
+        <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100 card-hover mb-8">
+            <h3 class="text-xl font-semibold mb-4 text-gray-800">维护记录</h3>
+            {% if maintenance %}
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-primary/80">
+                        <tr class="hover:bg-primary/60 transition-colors duration-150">
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">维护日期</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">维护类型</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">维护人员</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">成本</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">备注</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-primary/30 divide-y divide-gray-700">
+                        {% for record in maintenance %}
+                        <tr>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-400">{{ record.maintenance_date.strftime('%Y-%m-%d') }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-400">{{ record.maintenance_type }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ record.performed_by }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ record.cost }}</td>
+                            <td class="px-6 py-4 text-sm text-gray-500">{{ record.notes }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p class="text-gray-500">暂无维护记录</p>
+            {% endif %}
+        </div>
+    </main>
+
+    <!-- 删除确认模态框 -->
+    <div id="deleteModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-lg shadow-xl p-6 max-w-md w-full border border-gray-200">
+            <div class="flex justify-between items-start mb-4">
+                <h3 class="text-lg font-medium text-gray-900">确认删除</h3>
+                <button onclick="closeModal()" class="text-gray-400 hover:text-white focus:outline-none" title="关闭模态框">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <p class="text-gray-600 mb-6">
+                确定要删除设备 <span class="font-medium text-primary">{{ equipment.name }}</span> 吗？此操作不可撤销。
+            </p>
+            <div class="flex justify-end space-x-3">
+                <button onclick="closeModal()" class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition duration-300">
+                    取消
+                </button>
+                <form action="/equipment/{{ equipment.id }}/delete" method="post" class="inline-block">
+                    <button type="submit" class="px-4 py-2 bg-red-600 border border-transparent rounded-md shadow-sm text-white hover:bg-red-700 transition duration-300">
+                        <i class="fas fa-trash mr-1"></i>确认删除
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function confirmDelete() {
+            document.getElementById('deleteModal').classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('deleteModal').classList.add('hidden');
+        }
+    </script>
+
+    <footer class="bg-white py-8 mt-12 border-t border-gray-200">
+        <div class="container mx-auto px-4 text-center">
+            <p class="text-gray-600">自控设备全生命周期管理平台 &copy; 2025</p>
+        </div>
+    </footer>
+</body>
+</html>

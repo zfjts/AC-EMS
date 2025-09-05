@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>文档详情</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#1e40af',
+                        secondary: '#3b82f6',
+                        accent: '#60a5fa',
+                        neutral: '#f3f4f6',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .card-shadow {
+                box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            }
+            .btn-hover {
+                /* 移除 @apply 指令，直接使用 Tailwind CSS 对应的样式 */
+                transition: all 300ms ease;
+                transform: translateY(0);
+            }
+            .btn-hover:hover {
+                box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+                transform: translateY(-0.125rem);
+            }
+        }
+    </style>
+</head>
+<body class="bg-dark text-gray-100 min-h-screen font-sans">
+    <!-- 导航栏 -->
+    <nav class="bg-primary/80 backdrop-blur-md shadow-md border-b border-neon/20">
+        <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+            <div class="flex items-center space-x-2">
+                <i class="fa fa-cogs text-2xl"></i>
+                <span class="text-xl font-bold">自控设备全生命周期管理平台</span>
+            </div>
+            <div class="hidden md:flex space-x-6">
+                <a href="/" class="hover:text-neon transition-colors duration-300 text-gray-300 font-medium">首页</a>
+                <a href="/equipment/" class="hover:text-neon transition-colors duration-300 text-gray-300 font-medium">设备管理</a>
+                <a href="/documents/" class="hover:text-neon transition-colors duration-300 text-gray-300 font-medium">文档管理</a>
+            </div>
+            <div class="md:hidden">
+                <button class="text-white focus:outline-none" title="菜单"></button>
+                    <i class="fa fa-bars text-xl"></i>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 主要内容 -->
+    <main class="container mx-auto px-4 py-8 max-w-7xl">
+        <div class="flex justify-between items-center mb-6">
+            <h1 class="text-2xl font-bold text-gray-800">文档详情</h1>
+            <div class="flex space-x-3">
+                <a href="/documents/" class="text-secondary hover:text-primary flex items-center">
+                    <i class="fa fa-arrow-left mr-1"></i>返回列表
+                </a>
+                <button onclick="confirmDelete()" class="bg-red-600 hover:bg-red-500 text-white px-4 py-2 rounded-md flex items-center btn-hover transition-all duration-300 hover:border-glow">
+                    <i class="fa fa-trash mr-1"></i>删除
+                </button>
+            </div>
+        </div>
+
+        <!-- 左右布局容器 -->
+        <div class="flex flex-col lg:flex-row gap-6">
+            <!-- 左侧：文档详情卡片 -->
+            <div class="lg:w-1/3 bg-primary/50 backdrop-blur-sm rounded-lg shadow-sm overflow-hidden card-shadow border border-neon/20">
+                <div class="p-6">
+                    <div class="flex flex-col md:flex-row md:items-start md:justify-between mb-6">
+                        <div>
+                            <h2 class="text-xl font-bold text-gray-900 mb-2">{{ document.title }}</h2>
+                            <div class="flex flex-wrap gap-2 mb-3">
+                                <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">{{ document.category }}</span>
+                                <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">{{ document.file_type }}</span>
+                            </div>
+                            <p class="text-sm text-gray-500">{{ document.file_name }}</p>
+                        </div>
+                        <div class="mt-4 md:mt-0 text-right">
+                            <p class="text-sm text-gray-500 mb-1">上传日期</p>
+                            <p class="font-medium text-gray-900">{{ document.upload_date.strftime('%Y-%m-%d %H:%M:%S') }}</p>
+                        </div>
+                    </div>
+
+                    {% if document.equipment %}
+                        <div class="mb-6 p-4 bg-primary/70 rounded-md border border-neon/20">
+                            <div class="flex items-start">
+                                <i class="fa fa-cog text-blue-500 mr-3 mt-1"></i>
+                                <div>
+                                    <h3 class="text-sm font-medium text-blue-700 mb-1">关联设备</h3>
+                                    {% for eq in document.equipment %}
+                                        <a href="/equipment/{{ eq.id }}" class="text-secondary hover:text-primary transition-colors duration-200 block mb-1">
+                                            {{ eq.name }} ({{ eq.model }})
+                                        </a>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %}
+
+                    <div class="mb-6">
+                        <h3 class="text-sm font-medium text-gray-700 mb-2">文档描述</h3>
+                        <div class="prose prose-sm max-w-none text-gray-600">
+                            {% if document.description %}
+                                {{ document.description | replace('\n', '<br>') | safe }}
+                            {% else %}
+                                <p class="text-gray-400 italic">暂无描述信息</p>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="border-t border-gray-200 pt-4 flex justify-center">
+                        <a href="/documents/view/{{ document.id }}" target="_blank" class="bg-primary hover:bg-primary/90 text-white px-6 py-3 rounded-md flex items-center btn-hover w-full md:w-auto justify-center md:justify-start max-w-xs">
+                            <i class="fa fa-file-text-o mr-2 text-lg"></i>
+                            <span>查看文档</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 右侧：文档预览（如果是PDF或图片） -->
+            <div class="lg:w-2/3">
+                {% if document.file_type.startswith('application/pdf') %}
+                    <div class="bg-white rounded-lg shadow-sm p-4 card-shadow h-full flex flex-col">
+                        <h3 class="text-sm font-medium text-gray-700 mb-3">文档预览</h3>
+                        <div class="flex-grow flex justify-center">
+                            <iframe src="/documents/view/{{ document.id }}" width="100%" height="500px" class="border-none" title="文档预览"></iframe>
+                        </div>
+                    </div>
+                {% elif document.file_type.startswith('image/') %}
+                    <div class="bg-white rounded-lg shadow-sm p-4 card-shadow h-full flex flex-col">
+                        <h3 class="text-sm font-medium text-gray-700 mb-3">图片预览</h3>
+                        <div class="flex-grow flex justify-center items-center">
+                            <img src="/documents/view/{{ document.id }}" alt="{{ document.title }}" class="max-w-full max-h-[500px] object-contain rounded-md">
+                        </div>
+                    </div>
+                {% else %}
+                    <div class="bg-white rounded-lg shadow-sm p-4 card-shadow h-full flex items-center justify-center">
+                        <div class="text-center">
+                            <i class="fa fa-file-o text-6xl text-gray-300 mb-3"></i>
+                            <p class="text-gray-500">该文件类型不支持预览</p>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </main>
+
+    <!-- 删除确认模态框 -->
+    <div id="deleteModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-lg shadow-xl p-6 max-w-md w-full">
+            <div class="flex justify-between items-start mb-4">
+                <h3 class="text-lg font-medium text-gray-900">确认删除</h3>
+                <button onclick="closeModal()" class="text-gray-400 hover:text-gray-500 focus:outline-none" title="关闭"></button>
+                    <i class="fa fa-times"></i>
+                </button>
+            </div>
+            <p class="text-gray-600 mb-6">
+                确定要删除文档 <span class="font-medium">{{ document.title }}</span> 吗？此操作不可撤销。
+            </p>
+            <div class="flex justify-end space-x-3">
+                <button onclick="closeModal()" class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 btn-hover">
+                    取消
+                </button>
+                <form action="/documents/delete/{{ document.id }}" method="post" class="inline-block">
+                    <button type="submit" class="px-4 py-2 bg-red-600 border border-transparent rounded-md shadow-sm text-white hover:bg-red-700 btn-hover">
+                        <i class="fa fa-trash mr-1"></i>确认删除
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function confirmDelete() {
+            document.getElementById('deleteModal').classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('deleteModal').classList.add('hidden');
+        }
+    </script>
+
+    <!-- 页脚 -->
+    <footer class="bg-gray-800 text-white py-8 mt-12">
+        <div class="container mx-auto px-4">
+            <div class="flex flex-col md:flex-row justify-between items-center">
+                <div class="mb-4 md:mb-0">
+                    <div class="flex items-center space-x-2 mb-2">
+                        <i class="fa fa-cogs text-xl"></i>
+                        <span class="text-lg font-bold">自控设备全生命周期管理平台</span>
+                    </div>
+                    <p class="text-gray-400 text-sm">高效管理您的自控设备，提升维护效率</p>
+                </div>
+                <div class="flex space-x-6">
+
+                </div>
+            </div>
+            <div class="border-t border-gray-700 mt-6 pt-6 text-center text-gray-400 text-sm">
+                © 2025 自控设备全生命周期管理平台. 保留所有权利.
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // 删除确认模态框
+        function confirmDelete() {
+            document.getElementById('deleteModal').classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('deleteModal').classList.add('hidden');
+        }
+
+        // 点击模态框外部关闭
+        document.getElementById('deleteModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeModal();
+            }
+        });
+    </script>
+</body>
+</html>

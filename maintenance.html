@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>检维修管理</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="/static/chart.umd.min.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#1e40af',
+                        secondary: '#3b82f6',
+                        accent: '#60a5fa',
+                        danger: '#dc2626',
+                        warning: '#f59e0b',
+                        success: '#10b981',
+                        neutral: '#64748b'
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .card-hover {
+                transition: all 300ms ease;
+            }
+            .card-hover:hover {
+                box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+                transform: translateY(-1px);
+            }
+        }
+    </style>
+</head>
+<body class="bg-white text-black min-h-screen font-sans">
+    <header class="bg-gradient-to-r from-blue-600 to-blue-800 py-6 shadow-md">
+        <div class="container mx-auto px-4">
+            <h1 class="text-3xl font-bold text-center text-white">自控设备全生命周期管理平台</h1>
+        </div>
+    </header>
+
+    {% include 'navbar.html' %}
+
+    <main class="container mx-auto px-4 py-8">
+        <h2 class="text-2xl font-bold mb-6 text-black">检维修管理中心</h2>
+
+        <!-- 统计概览 -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div class="bg-gradient-to-br from-blue-600 to-blue-800 rounded-xl p-6 shadow-md hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1 card-hover">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-semibold text-white">待处理提醒</h3>
+                    <i class="fa fa-bell text-2xl text-white/90"></i>
+                </div>
+                <p class="text-3xl font-bold text-white">{{ pending_reminders }}</p>
+                <p class="text-white/80 mt-2">需要及时处理的维护任务</p>
+            </div>
+            <div class="bg-gradient-to-br from-yellow-600 to-yellow-800 rounded-xl p-6 shadow-md hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1 card-hover">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-semibold text-white">故障报告</h3>
+                    <i class="fa fa-exclamation-circle text-2xl text-white/90"></i>
+                </div>
+                <p class="text-3xl font-bold text-white">{{ fault_reports }}</p>
+                <p class="text-white/80 mt-2">已提交的设备故障数量</p>
+            </div>
+            <div class="bg-gradient-to-br from-green-600 to-green-800 rounded-xl p-6 shadow-md hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1 card-hover">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-semibold text-white">已完成维护</h3>
+                    <i class="fa fa-check-circle text-2xl text-white/90"></i>
+                </div>
+                <p class="text-3xl font-bold text-white">{{ completed_maintenances }}</p>
+                <p class="text-white/80 mt-2">{{ completion_rate }}% 任务完成率</p>
+            </div>
+            <div class="bg-gradient-to-br from-purple-600 to-purple-800 rounded-xl p-6 shadow-md hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1 card-hover">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-semibold text-white">点巡检标准</h3>
+                    <i class="fa fa-list-check text-2xl text-white/90"></i>
+                </div>
+                <p class="text-3xl font-bold text-white">{{ inspection_standards }}</p>
+                <p class="text-white/80 mt-2">已制定的标准数量</p>
+            </div>
+        </div>
+
+        <!-- 功能模块 -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+            <a href="/maintenance/reminders/" class="block bg-white rounded-xl p-6 shadow-md hover:shadow-lg transition-all duration-300 border border-gray-100 card-hover">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-xl font-semibold text-black">维护提醒</h3>
+                    <i class="fa fa-calendar-check text-2xl text-blue-600"></i>
+                </div>
+                <p class="text-gray-600 mb-4">查看和管理设备的定期维护提醒，及时处理即将到期的维护任务。</p>
+                <div class="flex justify-end text-blue-600 font-medium">
+                    查看详情 <i class="fa fa-arrow-right ml-2"></i>
+                </div>
+            </a>
+            <a href="/fault-reports/" class="block bg-white rounded-xl p-6 shadow-md hover:shadow-lg transition-all duration-300 border border-gray-100 card-hover">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-xl font-semibold text-black">故障报告</h3>
+                    <i class="fa fa-bug text-2xl text-red-600"></i>
+                </div>
+                <p class="text-gray-600 mb-4">提交新的设备故障报告，查看历史故障记录和处理情况。</p>
+                <div class="flex justify-end text-blue-600 font-medium">
+                    查看详情 <i class="fa fa-arrow-right ml-2"></i>
+                </div>
+            </a>
+            <a href="/inspection/standards/" class="block bg-white rounded-xl p-6 shadow-md hover:shadow-lg transition-all duration-300 border border-gray-100 card-hover">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-xl font-semibold text-black">点巡检标准</h3>
+                    <i class="fa fa-file-alt text-2xl text-green-600"></i>
+                </div>
+                <p class="text-gray-600 mb-4">制定和管理设备的点巡检标准，确保检查工作规范化和标准化。</p>
+                <div class="flex justify-end text-blue-600 font-medium">
+                    查看详情 <i class="fa fa-arrow-right ml-2"></i>
+                </div>
+            </a>
+            <a href="/maintenance/history/" class="block bg-white rounded-xl p-6 shadow-md hover:shadow-lg transition-all duration-300 border border-gray-100 card-hover">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-xl font-semibold text-black">维护历史</h3>
+                    <i class="fa fa-history text-2xl text-purple-600"></i>
+                </div>
+                <p class="text-gray-600 mb-4">查看所有设备的维护历史记录，分析维护效果和设备性能。</p>
+                <div class="flex justify-end text-blue-600 font-medium">
+                    查看详情 <i class="fa fa-arrow-right ml-2"></i>
+                </div>
+            </a>
+            <a href="/maintenance/create/" class="block bg-white rounded-xl p-6 shadow-md hover:shadow-lg transition-all duration-300 border border-gray-100 card-hover">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-xl font-semibold text-black">新建维护记录</h3>
+                    <i class="fa fa-plus-circle text-2xl text-yellow-600"></i>
+                </div>
+                <p class="text-gray-600 mb-4">手动创建新的设备维护记录，记录维护内容、更换部件和费用等信息。</p>
+                <div class="flex justify-end text-blue-600 font-medium">
+                    查看详情 <i class="fa fa-arrow-right ml-2"></i>
+                </div>
+            </a>
+            <a href="/maintenance/statistics/" class="block bg-white rounded-xl p-6 shadow-md hover:shadow-lg transition-all duration-300 border border-gray-100 card-hover">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-xl font-semibold text-black">维护统计分析</h3>
+                    <i class="fa fa-chart-pie text-2xl text-indigo-600"></i>
+                </div>
+                <p class="text-gray-600 mb-4">查看维护工作的统计分析报告，包括维护频率、成本和设备可靠性等。</p>
+                <div class="flex justify-end text-blue-600 font-medium">
+                    查看详情 <i class="fa fa-arrow-right ml-2"></i>
+                </div>
+            </a>
+        </div>
+
+
+    </main>
+
+    <footer class="bg-white py-8 mt-12 border-t border-gray-100">
+        <div class="container mx-auto px-4 text-center">
+            <p>自控设备全生命周期管理平台 &copy; 2025</p>
+        </div>
+    </footer>
+</body>
+</html>

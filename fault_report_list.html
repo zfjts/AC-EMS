@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>故障报告列表 - 自控设备全生命周期管理平台</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="/static/font-awesome.min.css" rel="stylesheet">
+    <script>
+        // 确保DOM加载完成后执行
+        document.addEventListener('DOMContentLoaded', function() {
+            // 动态加载Chart.js，如果失败则使用备用CDN
+            var script = document.createElement('script');
+            script.src = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js';
+            script.onload = function() {
+                console.log('Chart.js加载成功');
+                // 初始化故障类型分布图表
+                initFaultTypeChart();
+            };
+            script.onerror = function() {
+                console.log('主CDN加载失败，尝试备用CDN');
+                var fallbackScript = document.createElement('script');
+                fallbackScript.src = 'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.8/chart.umd.min.js';
+                fallbackScript.onload = function() {
+                    console.log('备用CDN加载成功');
+                    initFaultTypeChart();
+                };
+                fallbackScript.onerror = function() {
+                    console.error('所有CDN加载失败，尝试本地Chart.js');
+                    // 尝试加载本地Chart.js
+                    var localScript = document.createElement('script');
+                    localScript.src = '/static/chart.umd.min.js';
+                    localScript.onload = function() {
+                        console.log('本地Chart.js加载成功');
+                        initFaultTypeChart();
+                    };
+                    localScript.onerror = function() {
+                        console.error('所有Chart.js加载方式均失败');
+                    };
+                    document.head.appendChild(localScript);
+                };
+                document.head.appendChild(fallbackScript);
+            };
+            document.head.appendChild(script);
+        });
+
+        // 初始化故障类型分布图表
+        function initFaultTypeChart() {
+            console.log('开始初始化故障类型分布图表');
+            const ctx = document.getElementById('faultTypeChart');
+            if (!ctx) {
+                console.error('未找到faultTypeChart元素');
+                return;
+            }
+            const canvasCtx = ctx.getContext('2d');
+            // 从模板变量获取数据
+            const faultTypes = {{ fault_types | tojson }};
+            const faultTypeCounts = {{ fault_type_counts | tojson }};
+            console.log('故障类型数据:', faultTypes);
+            console.log('故障类型计数:', faultTypeCounts);
+            new Chart(canvasCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: faultTypes,
+                    datasets: [{
+                        data: faultTypeCounts,
+                        backgroundColor: [
+                            '#3b82f6',
+                            '#10b981',
+                            '#f59e0b',
+                            '#ef4444',
+                            '#8b5cf6'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        },
+                        title: {
+                            display: true,
+                            text: '故障类型分布'
+                        }
+                    }
+                }
+            });
+            console.log('故障类型分布图表初始化完成');
+        }
+    </script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#165DFF',
+                        secondary: '#4080FF',
+                        accent: '#69b1ff',
+                        neon: '#36CFFB',
+                        dark: '#020617',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .bg-gradient-tech {
+                background: linear-gradient(135deg, #165DFF 0%, #4080FF 100%);
+            }
+            .text-shadow-neon {
+                text-shadow: 0 0 8px rgba(64, 128, 255, 0.5);
+            }
+            .border-glow {
+                box-shadow: 0 0 5px rgba(64, 128, 255, 0.7);
+            }
+            .card-hover {
+                transition: all 300ms ease;
+                will-change: transform;
+            }
+            .card-hover:hover {
+                box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05), 0 0 10px rgba(64, 128, 255, 0.2);
+                transform: translateY(-1px);
+            }
+            .table-fixed-layout {
+                table-layout: fixed;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-900 min-h-screen font-sans flex flex-col">
+    <header class="bg-primary text-white border-b border-neon/30 shadow-lg">
+        <div class="container mx-auto px-4 py-6">
+            <h1 class="text-[clamp(1.8rem,5vw,3rem)] font-bold text-center text-white text-shadow-neon">
+                自控设备全生命周期管理平台
+            </h1>
+        </div>
+    </header>
+
+    {% include 'navbar.html' %}
+
+    <script>
+        // 移动端菜单切换
+        document.addEventListener('DOMContentLoaded', function() {
+            const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+            const mobileMenu = document.getElementById('mobile-menu');
+
+            if (mobileMenuBtn && mobileMenu) {
+                mobileMenuBtn.addEventListener('click', function() {
+                    mobileMenu.classList.toggle('hidden');
+                });
+            }
+        });
+    </script>
+
+    <main class="container mx-auto px-4 py-8 flex-grow">
+        <div class="flex flex-col md:flex-row gap-6">
+            <!-- 左侧统计卡片 -->
+            <div class="md:w-1/4 space-y-6">
+                <div class="bg-white rounded-xl shadow-md p-6 border border-gray-200 card-hover">
+                    <h3 class="text-lg font-bold mb-4 text-primary flex items-center"><i class="fa fa-bar-chart mr-2"></i>故障统计</h3>
+                    <div class="space-y-4">
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-600">总故障数</span>
+                            <span class="text-xl font-bold text-gray-800">{{ total_reports }}</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-600">待处理</span>
+                            <span class="text-xl font-bold text-yellow-500">{{ pending_reports }}</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-600">已解决</span>
+                            <span class="text-xl font-bold text-green-500">{{ resolved_reports }}</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-600">硬件故障</span>
+                            <span class="text-xl font-bold text-gray-800">{{ hardware_faults }}</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-600">软件故障</span>
+                            <span class="text-xl font-bold text-gray-800">{{ software_faults }}</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-white rounded-xl shadow-md p-6 border border-gray-200 card-hover">
+                    <h3 class="text-lg font-bold mb-4 text-primary flex items-center"><i class="fa fa-pie-chart mr-2"></i>故障类型分布</h3>
+                    <div class="w-full h-64 md:h-80">
+                        <canvas id="faultTypeChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            <!-- 右侧列表 -->
+            <div class="md:w-3/4">
+                <div class="bg-white rounded-xl shadow-md p-6 mb-8 border border-gray-200 card-hover">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-xl font-bold text-gray-800">故障报告列表</h2>
+                        <a href="/fault-reports/create/" class="bg-primary hover:bg-primary/90 text-white font-medium py-2 px-4 rounded-md transition duration-300 flex items-center">
+                            <i class="fa fa-plus mr-2"></i>新增报告
+                        </a>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full bg-white rounded-lg overflow-hidden table-fixed-layout border border-gray-200">
+                            <thead>
+                                <tr class="text-left">
+                                    <th class="py-4 px-5 font-bold text-gray-800 transition-all duration-300 text-center align-middle">报告日期</th>
+                                    <th class="py-4 px-5 font-bold text-gray-800 transition-all duration-300 text-center align-middle">设备名称</th>
+                                    <th class="py-4 px-5 font-bold text-gray-800 transition-all duration-300 text-center align-middle">故障类型</th>
+                                    <th class="py-4 px-5 font-bold text-gray-800 transition-all duration-300 text-center align-middle">状态</th>
+                                    <th class="py-4 px-5 font-bold text-gray-800 transition-all duration-300 text-center align-middle">操作</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-200">
+                                {% if reports %}
+                                    {% for report in reports %}
+                                    <tr class="hover:bg-gray-50 transition duration-300 border-b border-gray-200">
+                                        <td class="py-3 px-4 text-gray-700 whitespace-nowrap text-center align-middle">{{ report.report_date.strftime('%Y-%m-%d') }}</td>
+                                        <td class="py-3 px-4 text-gray-700 whitespace-nowrap text-center align-middle">{% if report.equipment %}{{ report.equipment.name }}{% else %}未知设备{% endif %}</td>
+                                        <td class="py-3 px-4 text-gray-700 whitespace-nowrap text-center align-middle">{{ report.fault_type }}</td>
+                                        <td class="py-3 px-4 whitespace-nowrap text-center align-middle">
+                                            {% if report.status == 'pending' %}
+                                                <span class="px-2 py-1 bg-yellow-100 text-yellow-800 text-xs rounded-full font-medium">待处理</span>
+                                            {% elif report.status == 'processing' %}
+                                                <span class="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full font-medium">处理中</span>
+                                            {% elif report.status == 'resolved' %}
+                                                <span class="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full font-medium">已解决</span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="py-3 px-4 whitespace-nowrap text-center align-middle">
+                                            <div class="flex space-x-4 justify-center items-center h-full">
+                                                <a href="/fault-reports/{{ report.id }}" class="text-primary hover:text-primary/80 transition duration-300 p-1" title="查看详情">
+                                                    <i class="fa fa-eye"></i>
+                                                </a>
+                                                <a href="/fault-reports/{{ report.id }}/edit/" class="text-blue-600 hover:text-blue-500 transition duration-300 p-1" title="编辑">
+                                                    <i class="fa fa-edit"></i>
+                                                </a>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                {% else %}
+                                    <tr>
+                                        <td colspan="5" class="py-8 text-center text-gray-500">暂无故障报告</td>
+                                    </tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                    <!-- 分页 -->
+                    {% if total_pages > 1 %}
+                    <div class="flex justify-center mt-6">
+                        <nav class="flex items-center space-x-2">
+                            <a href="?page={{ current_page - 1 }}" class="px-3 py-1 rounded-md border border-gray-300 text-gray-600 hover:bg-gray-50 hover:text-primary disabled:opacity-50 disabled:cursor-not-allowed" {% if current_page == 1 %}disabled{% endif %} title="上一页">
+                                <i class="fa fa-chevron-left"></i>
+                            </a>
+                            {% for page in range(1, total_pages + 1) %}
+                                <a href="?page={{ page }}" class="px-3 py-1 rounded-md border border-gray-300 text-gray-600 hover:bg-gray-50 hover:text-primary {{ 'bg-primary/10 text-primary border-primary' if page == current_page else '' }}">
+                                    {{ page }}
+                                </a>
+                            {% endfor %}
+                            <a href="?page={{ current_page + 1 }}" class="px-3 py-1 rounded-md border border-gray-300 text-gray-600 hover:bg-gray-50 hover:text-primary disabled:opacity-50 disabled:cursor-not-allowed" {% if current_page == total_pages %}disabled{% endif %} title="下一页">
+                                <i class="fa fa-chevron-right"></i>
+                            </a>
+                        </nav>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="bg-white border-t border-gray-200 py-8 mt-12">
+        <div class="container mx-auto px-4 text-center">
+            <p class="text-gray-600">自控设备全生命周期管理平台 &copy; 2025</p>
+        </div>
+      </footer>
+
+</body>
+</html>

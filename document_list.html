@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>文档管理</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                    colors: {
+                        primary: '#2563eb',
+                        secondary: '#3b82f6',
+                        success: '#10b981',
+                        warning: '#f59e0b',
+                        danger: '#ef4444',
+                    },
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .align-middle {
+                vertical-align: middle;
+            }
+            .card-hover {
+                transition: all 300ms ease;
+                will-change: transform;
+            }
+            .card-hover:hover {
+                box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+                transform: translateY(-1px);
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800 min-h-screen font-sans">
+    <header class="bg-gradient-to-r from-blue-600 to-blue-800 py-6 shadow-md">
+        <div class="container mx-auto px-4">
+            <h1 class="text-3xl font-bold text-center text-white">自控设备全生命周期管理平台</h1>
+        </div>
+    </header>
+
+    {% include 'navbar.html' %}
+
+    <!-- 主要内容 -->
+    <main class="container mx-auto px-4 py-8">
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+            <h2 class="text-2xl font-semibold text-gray-800 flex items-center"><i class="fa fa-file-text-o mr-2 text-primary"></i>文档管理</h2>
+            <div class="flex flex-col sm:flex-row gap-4 w-full md:w-auto">
+                <a href="/documents/create/" class="bg-primary hover:bg-primary/90 text-white font-medium px-6 py-2 rounded-md flex items-center justify-center transition-all duration-300 shadow-sm hover:shadow">
+                    <i class="fa fa-upload mr-2"></i>上传文档
+                </a>
+                <div class="relative w-full sm:w-64">
+                    <input type="text" placeholder="搜索文档..." class="pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary text-gray-800 w-full">
+                    <i class="fa fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                </div>
+            </div>
+        </div>
+
+
+
+        <!-- 文档列表 -->
+        <div class="rounded-xl shadow-md overflow-hidden border border-gray-100 bg-white transition-all duration-300 hover:shadow-lg">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr class="hover:bg-primary/5 transition-colors duration-150">
+                        <th scope="col" class="px-6 py-4 text-center text-sm font-semibold text-gray-700 uppercase tracking-wider align-middle">标题</th>
+                        <th scope="col" class="px-6 py-4 text-center text-sm font-semibold text-gray-700 uppercase tracking-wider align-middle">分类</th>
+                        <th scope="col" class="px-6 py-4 text-center text-sm font-semibold text-gray-700 uppercase tracking-wider align-middle">文件类型</th>
+                        <th scope="col" class="px-6 py-4 text-center text-sm font-semibold text-gray-700 uppercase tracking-wider align-middle">关联设备</th>
+                        <th scope="col" class="px-6 py-4 text-center text-sm font-semibold text-gray-700 uppercase tracking-wider align-middle">上传日期</th>
+                        <th scope="col" class="px-6 py-4 text-center text-sm font-semibold text-gray-700 uppercase tracking-wider align-middle">操作</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                    {% if documents %} 
+                        {% for doc in documents %} 
+                            <tr class="hover:bg-gray-50 transition-colors duration-150">
+                                <td class="px-6 py-4 whitespace-nowrap text-center align-middle">
+                                    <div class="font-medium text-gray-800">{{ doc.title }}</div>
+                                    <div class="text-sm text-gray-600">{{ doc.file_name }}</div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-center align-middle">
+                                    <span class="px-3 py-1 inline-flex text-sm leading-5 font-medium rounded-full bg-primary/10 text-primary">{{ doc.category }}</span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 text-center align-middle">
+                                    {{ doc.file_type.split('/')[-1].upper() }}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 text-center align-middle">
+                                    {% if doc.equipment %}
+                                        {% for eq in doc.equipment %}
+                                            <span class="block">{{ eq.name }} ({{ eq.model }})</span>
+                                        {% endfor %}
+                                    {% else %}
+                                        无关联
+                                    {% endif %}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center align-middle">
+                                    {{ doc.upload_date.strftime('%Y-%m-%d') }}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium align-middle">
+                                    <div class="flex justify-center space-x-3">
+                                        <a href="/documents/{{ doc.id }}" class="text-primary hover:text-primary/80 transition-colors duration-300 p-1 rounded-full hover:bg-primary/10" title="查看文档">
+                                            <i class="fa fa-eye"></i>
+                                        </a>
+                                        <a href="/documents/{{ doc.id }}/edit" class="text-primary hover:text-primary/80 transition-colors duration-300 p-1 rounded-full hover:bg-primary/10" title="编辑文档">
+                                            <i class="fa fa-edit"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="6" class="px-6 py-12 text-center text-gray-800 align-middle">
+                                <i class="fa fa-file-text-o text-4xl mb-3 text-gray-400"></i>
+                                <p class="text-gray-600">暂无文档数据</p>
+                                <a href="/documents/create/" class="text-primary hover:underline mt-2 inline-block transition-colors duration-300">上传文档</a>
+                            </td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </main>
+
+        <footer class="bg-gray-800 text-white py-8 mt-12">
+            <div class="container mx-auto px-4 text-center">
+                <p>自控设备全生命周期管理平台 &copy; 2025</p>
+            </div>
+        </footer>
+
+
+
+</body>
+</html>

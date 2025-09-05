@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ '编辑' if standard else '创建' }}点巡检标准 - 自控设备全生命周期管理平台</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="/static/font-awesome.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#165DFF',
+                        secondary: '#4080FF',
+                        accent: '#69b1ff',
+                        neon: '#36CFFB',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .bg-gradient-tech {
+                background: linear-gradient(135deg, #165DFF 0%, #4080FF 100%);
+            }
+            .text-shadow-neon {
+                text-shadow: 0 0 8px rgba(54, 207, 251, 0.5);
+            }
+            .border-glow {
+                box-shadow: 0 0 5px rgba(6, 182, 212, 0.7);
+            }
+            .card-hover {
+                transition: all 300ms ease;
+                will-change: transform;
+            }
+            .card-hover:hover {
+                box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05), 0 0 10px rgba(6, 182, 212, 0.2);
+                transform: translateY(-1px);
+            }
+        }
+    </style>
+</head>
+<body class="bg-white text-gray-900 min-h-screen font-sans flex flex-col">
+    <header class="bg-gradient-tech border-b border-neon/30 shadow-lg">
+        <div class="container mx-auto px-4 py-6">
+            <h1 class="text-[clamp(1.8rem,5vw,3rem)] font-bold text-center text-gray-900 text-shadow-neon">
+                自控设备全生命周期管理平台
+            </h1>
+        </div>
+    </header>
+
+    <nav class="bg-primary/90 backdrop-blur-md shadow-md border-b border-neon/30 sticky top-0 z-10">
+        <div class="container mx-auto px-4">
+            <div class="flex justify-between items-center py-4">
+                <div class="flex items-center space-x-2 md:hidden">
+                    <button id="mobile-menu-btn" class="text-gray-700 hover:text-neon focus:outline-none" title="打开移动端菜单"></button>
+                        <i class="fa fa-bars text-xl"></i>
+                    </button>
+                </div>
+                <ul id="main-nav" class="hidden md:flex space-x-8 py-2">
+                    <li><a href="/" class="font-semibold text-gray-700 hover:text-neon px-1 py-2 transition-all duration-300 hover:border-b-2 hover:border-neon/50">首页</a></li>
+                    <li><a href="/equipment/" class="font-medium text-gray-700 hover:text-neon px-1 py-2 transition-all duration-300 hover:border-b-2 hover:border-neon/50">设备管理</a></li>
+                    <li><a href="/documents/" class="font-medium text-gray-700 hover:text-neon px-1 py-2 transition-all duration-300 hover:border-b-2 hover:border-neon/50">文档管理</a></li>
+                    <li><a href="/maintenance/reminders/" class="font-medium text-gray-700 hover:text-neon px-1 py-2 transition-all duration-300 hover:border-b-2 hover:border-neon/50">维护提醒</a></li>
+                    <li><a href="/maintenance/" class="font-medium text-neon border-b-2 border-neon px-1 py-2 transition-all duration-300">检维修管理</a></li>
+                    <li><a href="/monitoring/" class="font-medium text-gray-700 hover:text-neon px-1 py-2 transition-all duration-300 hover:border-b-2 hover:border-neon/50">生命周期分析</a></li>
+                </ul>
+            </div>
+        </div>
+        <!-- 移动端菜单 -->
+        <div id="mobile-menu" class="hidden md:hidden bg-primary/95 border-t border-neon/20 absolute w-full">
+            <ul class="flex flex-col space-y-4 p-4">
+                <li><a href="/" class="font-medium text-gray-700 hover:text-neon block py-2 transition-all duration-300">首页</a></li>
+                <li><a href="/equipment/" class="font-medium text-gray-700 hover:text-neon block py-2 transition-all duration-300">设备管理</a></li>
+                <li><a href="/documents/" class="font-medium text-gray-700 hover:text-neon block py-2 transition-all duration-300">文档管理</a></li>
+                <li><a href="/maintenance/reminders/" class="font-medium text-gray-700 hover:text-neon block py-2 transition-all duration-300">维护提醒</a></li>
+                <li><a href="/maintenance/" class="font-medium text-neon block py-2 transition-all duration-300">检维修管理</a></li>
+                <li><a href="/monitoring/" class="font-medium text-gray-700 hover:text-neon block py-2 transition-all duration-300">生命周期分析</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <script>
+        // 移动端菜单切换
+        document.getElementById('mobile-menu-btn').addEventListener('click', function() {
+            const mobileMenu = document.getElementById('mobile-menu');
+            mobileMenu.classList.toggle('hidden');
+        });
+    </script>
+
+    <main class="flex-grow container mx-auto px-4 py-8">
+        <div class="max-w-3xl mx-auto bg-white border border-gray-200 rounded-xl shadow-lg p-6 border border-neon/30 card-hover">
+            <h2 class="text-3xl font-semibold mb-6 text-center text-black font-medium">{{ '编辑' if standard else '创建' }}点巡检标准</h2>
+            <form action="{{ '/inspection/standards/' ~ standard.id ~ '/edit/' if standard else '/inspection/standards/create/' }}" method="post" enctype="multipart/form-data" class="space-y-6">
+                {% if standard %}
+                <input type="hidden" name="id" value="{{ standard.id }}">
+                {% endif %}
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="md:col-span-2">
+                        <label for="name" class="block text-gray-700 font-medium mb-2">标准名称 <span class="text-red-400">*</span></label>
+                        <input type="text" id="name" name="name" required value="{{ standard.name if standard else '' }}"
+                            class="bg-white border border-gray-300 rounded-md w-full px-4 py-2 text-gray-900 focus:outline-none focus:border-neon focus:border-glow">
+                    </div>
+                    <div>
+                        <label for="equipment_type" class="block text-gray-700 font-medium mb-2">设备类型 <span class="text-red-400">*</span></label>
+                        <select id="equipment_type" name="equipment_type" required
+                            class="bg-white border border-gray-300 rounded-md w-full px-4 py-2 text-gray-900 focus:outline-none focus:border-neon focus:border-glow">
+                            <option value="">请选择设备类型</option>
+                            <option value="DCS" {% if standard and standard.equipment_type == 'DCS' %}selected{% endif %}>DCS</option>
+                            <option value="PLC" {% if standard and standard.equipment_type == 'PLC' %}selected{% endif %}>PLC</option>
+                            <option value="变送器" {% if standard and standard.equipment_type == '变送器' %}selected{% endif %}>变送器</option>
+                            <option value="热电阻" {% if standard and standard.equipment_type == '热电阻' %}selected{% endif %}>热电阻</option>
+                            <option value="热电偶" {% if standard and standard.equipment_type == '热电偶' %}selected{% endif %}>热电偶</option>
+                            <option value="调节阀" {% if standard and standard.equipment_type == '调节阀' %}selected{% endif %}>调节阀</option>
+                            <option value="切断阀" {% if standard and standard.equipment_type == '切断阀' %}selected{% endif %}>切断阀</option>
+                            <option value="物位计" {% if standard and standard.equipment_type == '物位计' %}selected{% endif %}>物位计</option>
+                            <option value="压力表" {% if standard and standard.equipment_type == '压力表' %}selected{% endif %}>压力表</option>
+                            <option value="双金属温度计" {% if standard and standard.equipment_type == '双金属温度计' %}selected{% endif %}>双金属温度计</option>
+                            <option value="分析仪表" {% if standard and standard.equipment_type == '分析仪表' %}selected{% endif %}>分析仪表</option>
+                            <option value="流量计" {% if standard and standard.equipment_type == '流量计' %}selected{% endif %}>流量计</option>
+                            <option value="其它" {% if standard and standard.equipment_type == '其它' %}selected{% endif %}>其它</option>
+                        </select>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label for="cycle" class="block text-gray-700 font-medium mb-2">巡检周期 <span class="text-red-400">*</span></label>
+                            <input type="number" id="cycle" name="cycle" min="1" required value="{{ standard.cycle if standard else '1' }}"
+                                class="bg-gray-50 border border-gray-300 rounded-md w-full px-4 py-2 text-gray-900 focus:outline-none focus:border-neon focus:border-glow">
+                        </div>
+                        <div>
+                            <label for="cycle_unit" class="block text-gray-700 font-medium mb-2">周期单位 <span class="text-red-400">*</span></label>
+                            <select id="cycle_unit" name="cycle_unit" required
+                                class="bg-white border border-gray-300 rounded-md w-full px-4 py-2 text-gray-900 focus:outline-none focus:border-neon focus:border-glow">
+                                <option value="天" {% if standard and standard.cycle_unit == '天' %}selected{% endif %}>天</option>
+                                <option value="周" {% if standard and standard.cycle_unit == '周' %}selected{% endif %}>周</option>
+                                <option value="月" {% if standard and standard.cycle_unit == '月' %}selected{% endif %}>月</option>
+                                <option value="季度" {% if standard and standard.cycle_unit == '季度' %}selected{% endif %}>季度</option>
+                                <option value="年" {% if standard and standard.cycle_unit == '年' %}selected{% endif %}>年</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="md:col-span-2">
+                        <label for="description" class="block text-gray-700 font-medium mb-2">标准描述</label>
+                        <textarea id="description" name="description" rows="3"
+                            class="bg-white border border-gray-300 rounded-md w-full px-4 py-2 text-gray-900 focus:outline-none focus:border-neon focus:border-glow">{{ standard.description if standard else '' }}</textarea>
+                    </div>
+                </div>
+                <div class="border-t border-gray-600 pt-6 mt-6">
+                    <h3 class="text-xl font-medium mb-4 text-neon">巡检项目</h3>
+                    <div id="inspection-items-container" class="space-y-4 mb-6">
+                        {% if standard and standard.items %}
+                            {% for item in standard.items %}
+                            <div class="inspection-item bg-white p-4 rounded-md border border-gray-200 flex flex-col md:flex-row gap-4">
+                                <div class="flex-grow">
+                                    <label class="block text-gray-700 font-medium mb-2">项目名称 <span class="text-red-400">*</span></label>
+                                    <input type="text" name="item_name[]" required value="{{ item.name }}" title="请输入巡检项目名称" placeholder="请输入巡检项目名称"
+                                class="bg-white border border-gray-300 rounded-md w-full px-4 py-2 text-gray-900 focus:outline-none focus:border-neon focus:border-glow">
+                                </div>
+                                <div class="flex-grow">
+                                    <label class="block text-gray-700 font-medium mb-2">检查标准 <span class="text-red-400">*</span></label>
+                                    <input type="text" name="item_standard[]" required value="{{ item.standard }}" title="请输入检查标准" placeholder="请输入检查标准"
+                                class="bg-white border border-gray-300 rounded-md w-full px-4 py-2 text-gray-900 focus:outline-none focus:border-neon focus:border-glow">
+                                </div>
+                                <div class="flex-grow">
+                                    <label class="block text-gray-700 font-medium mb-2">检查方法 <span class="text-red-400">*</span></label>
+                                    <input type="text" name="item_method[]" required value="{{ item.method }}" title="请输入检查方法" placeholder="请输入检查方法"
+                                class="bg-white border border-gray-300 rounded-md w-full px-4 py-2 text-gray-900 focus:outline-none focus:border-neon focus:border-glow">
+                                </div>
+                                <div class="flex items-end">
+                                    <button type="button" class="remove-item bg-gray-200 hover:bg-gray-300 text-gray-700 p-2 rounded-md transition duration-300 mt-auto" title="删除巡检项目">
+                                        <i class="fa fa-minus"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="inspection-item bg-white p-4 rounded-md border border-gray-200 flex flex-col md:flex-row gap-4">
+                                <div class="flex-grow">
+                                    <label class="block text-gray-700 font-medium mb-2">项目名称 <span class="text-red-400">*</span></label>
+                                    <input type="text" name="item_name[]" required title="请输入巡检项目名称" placeholder="请输入巡检项目名称"
+                                        class="bg-white border border-gray-300 rounded-md w-full px-4 py-2 text-gray-900 focus:outline-none focus:border-neon focus:border-glow">
+                                </div>
+                                <div class="flex-grow">
+                                    <label class="block text-gray-700 font-medium mb-2">检查标准 <span class="text-red-400">*</span></label>
+                                    <input type="text" name="item_standard[]" required title="请输入检查标准" placeholder="请输入检查标准"
+                                        class="bg-white border border-gray-300 rounded-md w-full px-4 py-2 text-gray-900 focus:outline-none focus:border-neon focus:border-glow">
+                                </div>
+                                <div class="flex-grow">
+                                    <label class="block text-gray-700 font-medium mb-2">检查方法 <span class="text-red-400">*</span></label>
+                                    <input type="text" name="item_method[]" required title="请输入检查方法" placeholder="请输入检查方法"
+                                        class="bg-white border border-gray-300 rounded-md w-full px-4 py-2 text-gray-900 focus:outline-none focus:border-neon focus:border-glow">
+                                </div>
+                                <div class="flex items-end">
+                                    <button type="button" class="remove-item bg-gray-200 hover:bg-gray-300 text-gray-700 p-2 rounded-md transition duration-300 mt-auto" title="删除巡检项目">
+                                        <i class="fa fa-minus"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        {% endif %}
+                    </div>
+                    <button type="button" id="add-item-btn" class="bg-secondary hover:bg-primary text-white font-semibold py-3 px-6 rounded-md transition duration-300 flex items-center">
+                        <i class="fa fa-plus mr-2"></i>添加巡检项目
+                    </button>
+                </div>
+                <div class="flex justify-center space-x-4 mt-8">
+                    <button type="submit" class="bg-primary hover:bg-primary/90 text-white font-medium py-2 px-6 rounded-md transition duration-300 border border-neon/50 hover:border-glow flex items-center justify-center"><i class="fa fa-save mr-2"></i>{{ '保存修改' if standard else '创建标准' }}</button>
+                    <a href="/inspection/standards/" class="bg-gray-200 hover:bg-gray-300 text-gray-900 font-medium py-2 px-6 rounded-md transition duration-300">
+                        取消
+                    </a>
+                </div>
+            </form>
+        </div>
+    </main>
+
+    <footer class="bg-primary border-t border-neon/30 py-8 mt-12">
+        <div class="container mx-auto px-4 text-center">
+            <p class="text-gray-600">自控设备全生命周期管理平台 &copy; 2025</p>
+        </div>
+    </footer>
+
+    <script>
+                    // 添加巡检项目
+                    document.getElementById('add-item-btn').addEventListener('click', function() {
+                        const container = document.getElementById('inspection-items-container');
+                        const newItem = document.createElement('div');
+                        newItem.className = 'inspection-item bg-white p-4 rounded-md border border-gray-200 flex flex-col md:flex-row gap-4';
+                        newItem.innerHTML = `
+                            <div class="flex-grow">
+                                <label class="block text-gray-700 font-medium mb-2">项目名称 <span class="text-red-400">*</span></label>
+                                <input type="text" name="item_name[]" required placeholder="请输入巡检项目名称"
+                                    class="bg-white border border-gray-300 rounded-md w-full px-4 py-2 text-gray-900 focus:outline-none focus:border-neon focus:border-glow">
+                            </div>
+                            <div class="flex-grow">
+                                <label class="block text-gray-700 font-medium mb-2">检查标准 <span class="text-red-400">*</span></label>
+                                <input type="text" name="item_standard[]" required placeholder="请输入检查标准"
+                                    class="bg-white border border-gray-300 rounded-md w-full px-4 py-2 text-gray-900 focus:outline-none focus:border-neon focus:border-glow">
+                            </div>
+                            <div class="flex-grow">
+                                <label class="block text-gray-700 font-medium mb-2">检查方法 <span class="text-red-400">*</span></label>
+                                <input type="text" name="item_method[]" required placeholder="请输入检查方法"
+                                    class="bg-white border border-gray-300 rounded-md w-full px-4 py-2 text-gray-900 focus:outline-none focus:border-neon focus:border-glow">
+                            </div>
+                            <div class="flex items-end">
+                                <button type="button" class="remove-item bg-gray-200 hover:bg-gray-300 text-gray-700 p-2 rounded-md transition duration-300 mt-auto">
+                                    <i class="fa fa-minus"></i>
+                                </button>
+                            </div>
+                        `;
+                        container.appendChild(newItem);
+
+                        // 为新添加的删除按钮添加事件监听
+                        newItem.querySelector('.remove-item').addEventListener('click', function() {
+                            newItem.remove();
+                        });
+                    });
+
+                    // 为已有的删除按钮添加事件监听
+                    document.querySelectorAll('.remove-item').forEach(button => {
+                        button.addEventListener('click', function() {
+                            button.closest('.inspection-item').remove();
+                        });
+                    });
+
+                    // 表单提交前检查必填字段
+                    document.querySelector('form').addEventListener('submit', function(e) {
+                        let isValid = true;
+                        const items = document.querySelectorAll('.inspection-item');
+                         
+                        // 验证至少有一个巡检项目
+                        if (items.length === 0) {
+                            e.preventDefault();
+                            alert('请至少添加一个巡检项目');
+                            return;
+                        }
+                         
+                        items.forEach(item => {
+                            const nameInput = item.querySelector('input[name="item_name[]"]');
+                            const standardInput = item.querySelector('input[name="item_standard[]"]');
+                            const methodInput = item.querySelector('input[name="item_method[]"]');
+                             
+                            if (!nameInput.value.trim() || !standardInput.value.trim() || !methodInput.value.trim()) {
+                                isValid = false;
+                                nameInput.classList.add('border-red-500');
+                                standardInput.classList.add('border-red-500');
+                                methodInput.classList.add('border-red-500');
+                            } else {
+                                nameInput.classList.remove('border-red-500');
+                                standardInput.classList.remove('border-red-500');
+                                methodInput.classList.remove('border-red-500');
+                            }
+                        });
+                         
+                        if (!isValid) {
+                            e.preventDefault();
+                            alert('请填写所有巡检项目的必填字段');
+                        }
+                    });
+                </script>
+</body>
+</html>

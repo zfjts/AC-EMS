@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>添加设备</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#165DFF',
+                        secondary: '#4080FF',
+                        accent: '#165DFF',
+                        neon: '#4080FF',
+                        dark: '#F2F3F5',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .bg-gradient-tech {
+                background: linear-gradient(135deg, #F2F3F5 0%, #E5E6EB 100%);
+            }
+            .text-shadow-neon {
+                text-shadow: 0 0 8px rgba(64, 128, 255, 0.5);
+            }
+            .border-glow {
+                box-shadow: 0 0 5px rgba(64, 128, 255, 0.7);
+            }
+        }
+    </style>
+</head>
+<body class="bg-dark text-gray-800 min-h-screen font-sans">
+    <header class="bg-primary text-white border-b border-neon/30 shadow-lg">
+        <div class="container mx-auto px-4 py-6">
+            <h1 class="text-3xl font-bold text-center">自控设备全生命周期管理平台</h1>
+        </div>
+    </header>
+
+    <nav class="bg-white border-b border-gray-200 shadow-sm">
+        <div class="container mx-auto px-4">
+            <ul class="flex space-x-6 py-4">
+                <li><a href="/" class="font-medium text-gray-600 hover:text-primary transition-colors duration-300">首页</a></li>
+                <li><a href="/equipment/" class="font-medium text-primary border-b-2 border-primary pb-1 hover:text-primary transition-colors duration-300">设备管理</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <main class="container mx-auto px-4 py-8">
+        <div class="max-w-2xl mx-auto bg-white rounded-lg shadow-md p-6 border border-gray-200">
+            <h2 class="text-2xl font-semibold mb-6 text-center text-primary">{{ '编辑设备' if equipment else '添加新设备' }}</h2>
+            <form action="{{ '/equipment/' + equipment.id|string + '/edit' if equipment else '/equipment/create/' }}" method="post">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                    <div>
+                        <label for="name" class="block text-gray-700 font-medium mb-2">设备名称</label>
+                        <input type="text" id="name" name="name" value="{{ equipment.name if equipment else '' }}" required
+                            class="w-full px-4 py-2 bg-white border border-gray-300 text-gray-800 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-colors duration-300">
+                    </div>
+                    <div>
+                        <label for="model" class="block text-gray-700 font-medium mb-2">型号</label>
+                        <input type="text" id="model" name="model" value="{{ equipment.model if equipment else '' }}" required
+                            class="w-full px-4 py-2 bg-white border border-gray-300 text-gray-800 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-colors duration-300">
+                    </div>
+                    <div>
+                        <label for="production_number" class="block text-gray-700 font-medium mb-2">生产编号</label>
+                        <input type="text" id="production_number" name="production_number" value="{{ equipment.production_number if equipment else '' }}"
+                            class="w-full px-4 py-2 bg-white border border-gray-300 text-gray-800 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-colors duration-300">
+                    </div>
+                    <div>
+                        <label for="manufacturer" class="block text-gray-700 font-medium mb-2">制造商</label>
+                        <input type="text" id="manufacturer" name="manufacturer" value="{{ equipment.manufacturer if equipment else '' }}" required
+                            class="w-full px-4 py-2 bg-white border border-gray-300 text-gray-800 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-colors duration-300">
+                    </div>
+
+                    <div>
+                        <label for="installation_date" class="block text-gray-700 font-medium mb-2">安装日期</label>
+                        <input type="date" id="installation_date" name="installation_date" value="{{ equipment.installation_date.strftime('%Y-%m-%d') if equipment and equipment.installation_date else '' }}" required
+                            class="w-full px-4 py-2 bg-white border border-gray-300 text-gray-800 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-colors duration-300">
+                    </div>
+
+                    <div>
+                        <label for="location" class="block text-gray-700 font-medium mb-2">安装位置</label>
+                        <input type="text" id="location" name="location" value="{{ equipment.location if equipment else '' }}" required
+                            class="w-full px-4 py-2 bg-white border border-gray-300 text-gray-800 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-colors duration-300">
+                    </div>
+<!-- 已删除重复的工作寿命输入框 -->
+                    <div>
+                        <label for="equipment_type" class="block text-gray-700 font-medium mb-2">设备类型</label>
+                        <select id="equipment_type" name="equipment_type" required
+                            class="w-full px-4 py-2 bg-white border border-gray-300 text-gray-800 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-colors duration-300">
+                            <option value="" {{ 'selected disabled' if not equipment or not equipment.equipment_type else 'disabled' }}>请选择设备类型</option>
+                            <option value="DCS" {{ 'selected' if equipment and equipment.equipment_type == 'DCS' else '' }}>DCS</option>
+                            <option value="PLC" {{ 'selected' if equipment and equipment.equipment_type == 'PLC' else '' }}>PLC</option>
+                            <option value="变送器" {{ 'selected' if equipment and equipment.equipment_type == '变送器' else '' }}>变送器</option>
+                            <option value="热电阻" {{ 'selected' if equipment and equipment.equipment_type == '热电阻' else '' }}>热电阻</option>
+                            <option value="热电偶" {{ 'selected' if equipment and equipment.equipment_type == '热电偶' else '' }}>热电偶</option>
+                            <option value="调节阀" {{ 'selected' if equipment and equipment.equipment_type == '调节阀' else '' }}>调节阀</option>
+                            <option value="切断阀" {{ 'selected' if equipment and equipment.equipment_type == '切断阀' else '' }}>切断阀</option>
+                            <option value="物位计" {{ 'selected' if equipment and equipment.equipment_type == '物位计' else '' }}>物位计</option>
+                            <option value="压力表" {{ 'selected' if equipment and equipment.equipment_type == '压力表' else '' }}>压力表</option>
+                            <option value="双金属温度计" {{ 'selected' if equipment and equipment.equipment_type == '双金属温度计' else '' }}>双金属温度计</option>
+                            <option value="分析仪表" {{ 'selected' if equipment and equipment.equipment_type == '分析仪表' else '' }}>分析仪表</option>
+                            <option value="流量计" {{ 'selected' if equipment and equipment.equipment_type == '流量计' else '' }}>流量计</option>
+                            <option value="其它" {{ 'selected' if equipment and equipment.equipment_type == '其它' else '' }}>其它</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="working_life" class="block text-gray-700 font-medium mb-2">工作寿命(月)</label>
+                        <input type="text" id="working_life" name="working_life" value="{{ equipment.working_life if equipment else '' }}"
+                            class="w-full px-4 py-2 bg-white border border-gray-300 text-gray-800 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-colors duration-300" placeholder="请输入工作寿命(月)">
+                    </div>
+                    <div>
+                        <label for="maintenance_cycle" class="block text-gray-700 font-medium mb-2">维护周期(月)</label>
+                        <input type="text" id="maintenance_cycle" name="maintenance_cycle" value="{{ equipment.maintenance_cycle if equipment else '' }}" readonly
+                            class="w-full px-4 py-2 bg-gray-100 border border-gray-300 text-gray-500 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-colors duration-300" placeholder="请选择设备类型">
+                    </div>
+                    <div class="md:col-span-2">
+                        <script>
+                            document.addEventListener('DOMContentLoaded', function() {
+                                const equipmentType = document.getElementById('equipment_type');
+                                const workingLife = document.getElementById('working_life');
+                            const maintenanceCycle = document.getElementById('maintenance_cycle');
+                                
+                                // 工作寿命映射表 (月)
+                                const workingLifeMap = {
+                                    'DCS': 240,
+                                    'PLC': 180,
+                                    '变送器': 120,
+                                    '热电阻': 120,
+                                    '热电偶': 60,
+                                    '调节阀': 120,
+                                    '切断阀': 180,
+                                    '物位计': 180,
+                                    '压力表': 60,
+                                    '双金属温度计': 120,
+                                    '分析仪表': 24,
+                                    '流量计': 120,
+                                    '其它': 12
+                                };
+
+                                // 维护周期映射表 (月)
+                                const maintenanceCycleMap = {
+                                    'DCS': 60,
+                                    'PLC': 12,
+                                    '变送器': 1,
+                                    '热电阻': 12,
+                                    '热电偶': 24,
+                                    '调节阀': 3,
+                                    '切断阀': 6,
+                                    '物位计': 3,
+                                    '压力表': 3,
+                                    '双金属温度计': 6,
+                                    '分析仪表': 1,
+                                    '流量计': 24,
+                                    '其它': 1
+                                };
+
+                                equipmentType.addEventListener('change', function() {
+                                    const selectedType = this.value;
+                                    // 自动设置工作寿命
+                                    workingLife.value = (workingLifeMap[selectedType] || '').toString();
+                                    maintenanceCycle.value = maintenanceCycleMap[selectedType] || '';
+                                });
+
+                                // 初始化工作寿命和维护周期值
+                                if (equipmentType.value) {
+                                    // 自动设置工作寿命
+                                    workingLife.value = (workingLifeMap[equipmentType.value] || '').toString();
+                                    maintenanceCycle.value = maintenanceCycleMap[equipmentType.value] || '';
+                                }
+                            });
+                        </script>
+                        <label for="status" class="block text-gray-700 font-medium mb-2">运行状态</label>
+                        <select id="status" name="status" required
+                            class="w-full px-4 py-2 bg-white border border-gray-300 text-gray-800 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-colors duration-300">
+                            <option value="运行中" {{ 'selected' if equipment and equipment.status == '运行中' else '' }}>运行中</option>
+                            <option value="维护中" {{ 'selected' if equipment and equipment.status == '维护中' else '' }}>维护中</option>
+                            <option value="故障" {{ 'selected' if equipment and equipment.status == '故障' else '' }}>故障</option>
+                            <option value="停用" {{ 'selected' if equipment and equipment.status == '停用' else '' }}>停用</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="flex justify-center space-x-4">
+                    <button type="submit" class="bg-primary hover:bg-primary/90 text-white font-medium py-2 px-6 rounded-md transition-all duration-300 hover:border-glow flex items-center justify-center gap-2">
+                        <i class="fa fa-save"></i> 保存
+                    </button>
+                    <a href="/equipment/" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-2 px-6 rounded-md transition-all duration-300 flex items-center justify-center gap-2">
+                        <i class="fa fa-times"></i> 取消
+                    </a>
+                </div>
+            </form>
+        </div>
+    </main>
+
+    <footer class="bg-white py-8 mt-12 border-t border-gray-200">
+        <div class="container mx-auto px-4 text-center">
+            <p class="text-gray-600">自控设备全生命周期管理平台 &copy; 2025</p>
+        </div>
+    </footer>
+</body>
+</html>

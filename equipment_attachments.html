@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ equipment.name }} - 附属信息</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#165DFF',
+                        secondary: '#4080FF',
+                        accent: '#165DFF',
+                        neon: '#4080FF',
+                        dark: '#F2F3F5',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .bg-gradient-tech {
+                background: linear-gradient(135deg, #F2F3F5 0%, #E5E6EB 100%);
+            }
+            .text-shadow-neon {
+                text-shadow: 0 0 8px rgba(64, 128, 255, 0.5);
+            }
+            .border-glow {
+                box-shadow: 0 0 5px rgba(64, 128, 255, 0.7);
+            }
+        }
+    </style>
+</head>
+<body class="bg-dark text-gray-800 min-h-screen font-sans">
+    <header class="bg-primary text-white border-b border-neon/30 shadow-lg">
+        <div class="container mx-auto px-4 py-6">
+            <h1 class="text-3xl font-bold text-center">自控设备全生命周期管理平台</h1>
+        </div>
+    </header>
+
+    <nav class="bg-white border-b border-gray-200 shadow-sm">
+        <div class="container mx-auto px-4">
+            <ul class="flex space-x-6 py-4">
+                <li><a href="/" class="font-medium text-gray-600 hover:text-primary transition-colors duration-300">首页</a></li>
+                <li><a href="/equipment/" class="font-medium text-primary border-b-2 border-primary pb-1 hover:text-primary transition-colors duration-300">设备管理</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <main class="container mx-auto px-4 py-8">
+        <div class="flex justify-between items-center mb-6">
+            <h2 class="text-2xl font-semibold text-shadow-neon">{{ equipment.name }} - 附属信息</h2>
+            <a href="/equipment/" class="bg-white hover:bg-gray-100 text-primary font-medium py-2 px-4 rounded-md transition duration-300 border border-primary/50 hover:border-primary flex items-center"><i class="fas fa-arrow-left mr-2"></i>返回列表</a>
+        </div>
+
+        <!-- 添加附属设备表单 -->
+        <div class="bg-white rounded-lg shadow-md p-6 border border-gray-200 mb-8">
+            <h3 class="text-xl font-medium text-primary border-b border-gray-200 pb-2 mb-4">添加附属设备</h3>
+            <form action="/equipment/{{ equipment.id }}/attachments/add_equipment" method="post" class="space-y-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label for="name" class="block text-sm font-medium text-gray-700 mb-1">设备名称</label>
+                        <input type="text" id="name" name="name" required
+                               class="w-full bg-white border border-gray-300 rounded-md px-4 py-2 text-gray-800 focus:outline-none focus:ring-2 focus:ring-primary/50">
+                    </div>
+                    <div>
+                        <label for="model" class="block text-sm font-medium text-gray-700 mb-1">型号</label>
+                        <input type="text" id="model" name="model"
+                               class="w-full bg-white border border-gray-300 rounded-md px-4 py-2 text-gray-800 focus:outline-none focus:ring-2 focus:ring-primary/50">
+                    </div>
+                    <div>
+                        <label for="manufacturer" class="block text-sm font-medium text-gray-700 mb-1">制造商</label>
+                        <input type="text" id="manufacturer" name="manufacturer"
+                               class="w-full bg-white border border-gray-300 rounded-md px-4 py-2 text-gray-800 focus:outline-none focus:ring-2 focus:ring-primary/50">
+                    </div>
+                    <div>
+                        <label for="relation_type" class="block text-sm font-medium text-gray-700 mb-1">关联类型</label>
+                        <select id="relation_type" name="relation_type"
+                                class="w-full bg-white border border-gray-300 rounded-md px-4 py-2 text-gray-800 focus:outline-none focus:ring-2 focus:ring-primary/50">
+                            <option value="配套">配套</option>
+                            <option value="控制">控制</option>
+                            <option value="监测">监测</option>
+                            <option value="其他">其他</option>
+                        </select>
+                    </div>
+                </div>
+                <button type="submit" class="bg-primary hover:bg-primary/90 text-white font-medium py-2 px-4 rounded-md transition duration-300 border border-primary/50 hover:border-primary">
+                    <i class="fas fa-plus mr-2"></i>添加设备
+                </button>
+            </form>
+        </div>
+
+        <!-- 附属设备列表 -->
+        <div class="bg-white rounded-lg shadow-md p-6 border border-gray-200 mb-8">
+            <h3 class="text-xl font-medium text-primary border-b border-gray-200 pb-2 mb-4">附属设备</h3>
+            {% if attachments.equipment %}
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-700">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">设备名称</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">型号</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">制造商</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">关联类型</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        {% for attach in attachments.equipment %}
+                        <tr>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-800">{{ attach.name }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{{ attach.model }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ attach.manufacturer }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ attach.relation_type }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                <a href="/equipment/{{ attach.id }}" class="text-primary hover:text-primary/80 mr-4">查看</a>
+                                <a href="/equipment/{{ equipment.id }}/attachments/delete_equipment/{{ loop.index0 }}" class="text-red-500 hover:text-red-700">删除</a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p class="text-gray-400 italic">暂无附属设备</p>
+            {% endif %}
+        </div>
+
+        <!-- 添加附属文档表单 -->
+        <div class="bg-white rounded-lg shadow-md p-6 border border-gray-200 mb-8">
+            <h3 class="text-xl font-medium text-primary border-b border-gray-200 pb-2 mb-4">添加附属文档</h3>
+            <form action="/equipment/{{ equipment.id }}/attachments/add_document" method="post" class="space-y-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label for="doc_name" class="block text-sm font-medium text-gray-700 mb-1">文档名称</label>
+                        <input type="text" id="doc_name" name="doc_name" required
+                               class="w-full bg-white border border-gray-300 rounded-md px-4 py-2 text-gray-800 focus:outline-none focus:ring-2 focus:ring-primary/50">
+                    </div>
+                    <div>
+                        <label for="doc_type" class="block text-sm font-medium text-gray-700 mb-1">文件类型</label>
+                        <select id="file_type" name="doc_type" title="选择文件类型"
+                                class="w-full bg-white border border-gray-300 rounded-md px-4 py-2 text-gray-800 focus:outline-none focus:ring-2 focus:ring-primary/50">
+                            <option value="PDF">PDF</option>
+                            <option value="DOCX">DOCX</option>
+                            <option value="XLSX">XLSX</option>
+                            <option value="其他">其他</option>
+                        </select>
+                    </div>
+                    <div class="md:col-span-2">
+                        <label for="description" class="block text-sm font-medium text-gray-700 mb-1">描述</label>
+                        <textarea id="description" name="description" rows="2"
+                                  class="w-full bg-white border border-gray-300 rounded-md px-4 py-2 text-gray-800 focus:outline-none focus:ring-2 focus:ring-primary/50"></textarea>
+                    </div>
+                </div>
+                <button type="submit" class="bg-primary hover:bg-primary/90 text-white font-medium py-2 px-4 rounded-md transition duration-300 border border-primary/50 hover:border-primary">
+                    <i class="fas fa-plus mr-2"></i>添加文档
+                </button>
+            </form>
+        </div>
+
+        <!-- 附属文档列表 -->
+        <div class="bg-white rounded-lg shadow-md p-6 border border-gray-200">
+            <h3 class="text-xl font-medium text-primary border-b border-gray-200 pb-2 mb-4">附属文档</h3>
+            {% if equipment.documents %}
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {% for doc in equipment.documents %}
+                <div class="bg-gray-50 p-4 rounded-md border border-gray-200 hover:border-primary/50 transition-colors duration-300 hover:shadow-md">
+                    <div class="flex items-center justify-between mb-2">
+                        <h4 class="font-medium text-gray-800">{{ doc.title }}</h4>
+                        <span class="text-xs text-gray-500">{{ doc.file_type }}</span>
+                    </div>
+                    <p class="text-sm text-gray-600 mb-3 line-clamp-2">{{ doc.description }}</p>
+                    <div class="flex items-center justify-between text-xs text-gray-400">
+                        <span>{{ doc.upload_date.strftime('%Y-%m-%d %H:%M:%S') }}</span>
+                        <div class="space-x-4">
+                            <a href="/documents/{{ doc.id }}" class="text-primary hover:text-primary/80 flex items-center"><i class="fas fa-file-alt mr-1"></i>查看详情</a>
+
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="text-gray-400 italic">暂无附属文档</p>
+            {% endif %}
+        </div>
+    </main>
+
+    <footer class="bg-white py-8 mt-12 border-t border-gray-200">
+        <div class="container mx-auto px-4 text-center">
+            <p class="text-gray-600">自控设备全生命周期管理平台 &copy; 2025</p>
+        </div>
+    </footer>
+</body>
+</html>
